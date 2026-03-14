@@ -1,0 +1,14 @@
+[Unit]
+Description=Teltonika FMC650 TCP Server
+After=network.target mysqld.service
+Wants=mysqld.service
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/fahrelectronics.com/public_html/newdashboard/python_server
+ExecStart=/usr/bin/python3 teltonika_server.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
