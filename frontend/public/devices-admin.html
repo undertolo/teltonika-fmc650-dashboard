@@ -187,7 +187,7 @@
 
         <!-- Devices table -->
         <div class="card">
-          <div class="table-responsive">
+          <div class="table-responsive" style="overflow:visible">
             <table class="table table-vcenter card-table table-hover" id="devices-table">
               <thead>
                 <tr>
@@ -474,7 +474,7 @@
       <td class="text-muted">${(d.total_records || 0).toLocaleString()}</td>
       <td class="text-end">
         <div class="dropdown">
-          <button class="btn btn-sm btn-ghost-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+          <button class="btn btn-sm" data-bs-toggle="dropdown" data-bs-boundary="window" aria-expanded="false" style="color:var(--tblr-secondary)">
             <i class="ti ti-dots-vertical"></i>
           </button>
           <div class="dropdown-menu dropdown-menu-end">
