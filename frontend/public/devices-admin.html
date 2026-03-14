@@ -21,6 +21,8 @@
     .badge-online  { background: rgba(47,179,68,.12);  color: #2fb344; }
     .badge-offline { background: rgba(214,57,57,.12);  color: #d63939; }
     .badge-sleep   { background: rgba(245,159,0,.12);  color: #f59f00; }
+    #refresh-indicator { font-size: .75rem; transition: opacity .3s; }
+    #refresh-indicator.refreshing { opacity: .5; }
   </style>
 </head>
 <body>
@@ -33,13 +35,17 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <h1 class="navbar-brand navbar-brand-autodark pe-0 pe-md-3 mb-0">
-        <a href="customers.html" class="d-flex align-items-center text-decoration-none">
+        <a href="/" class="d-flex align-items-center text-decoration-none">
           <img src="img/logo-small.svg" class="hide-theme-dark" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
           <img src="img/logo-small-white.svg" class="hide-theme-light" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
           <span class="ms-2" style="font-size:1rem;font-weight:600">FAHR <span class="d-none d-lg-inline-block">Electronic Systems</span></span>
         </a>
       </h1>
       <div class="navbar-nav flex-row order-md-last ms-auto align-items-center">
+        <div class="d-none d-md-flex me-3 align-items-center gap-2 text-muted" id="refresh-indicator">
+          <span class="status-dot bg-success"></span>
+          <span id="last-refresh-text">—</span>
+        </div>
         <div class="d-none d-md-flex me-2 align-items-center">
           <a href="javascript:void(0)" class="nav-link px-0 hide-theme-dark" onclick="toggleDarkMode()" title="Modo oscuro">
             <i class="icon ti ti-moon"></i>
@@ -135,7 +141,7 @@
                 <input type="search" id="search-input" class="form-control form-control-sm"
                        placeholder="Buscar IMEI, unidad..." oninput="filterDevices(this.value)"
                        style="width:220px;">
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadDevices()" title="Actualizar">
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadDevices(true)" title="Actualizar">
                   <i class="ti ti-refresh"></i>
                 </button>
               </div>
@@ -148,9 +154,7 @@
           <div class="col-sm-6 col-xl-3">
             <div class="card">
               <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="subheader">Total dispositivos</div>
-                </div>
+                <div class="subheader">Total dispositivos</div>
                 <div class="h1 mb-0" id="stat-total">—</div>
               </div>
             </div>
@@ -226,6 +230,47 @@
   </div><!-- /.page-wrapper -->
 </div><!-- /.page -->
 
+<!-- ── Assign Device Modal ───────────────────────────────── -->
+<div class="modal modal-blur fade" id="assignModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ti ti-truck me-2"></i>Asignar dispositivo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label text-muted">IMEI</label>
+          <div class="fw-bold font-monospace" id="assign-imei-display">—</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="assign-client-select">Cliente</label>
+          <select class="form-select" id="assign-client-select" onchange="onClientChange()">
+            <option value="">— Seleccionar cliente —</option>
+          </select>
+        </div>
+        <div class="mb-3" id="assign-truck-wrap" style="display:none">
+          <label class="form-label" for="assign-truck-select">Unidad / Vehículo</label>
+          <select class="form-select" id="assign-truck-select">
+            <option value="">— Seleccionar unidad —</option>
+          </select>
+          <div class="form-text">Si el cliente no tiene unidades aún, crea una desde la sección Vehículos.</div>
+        </div>
+        <div id="assign-error" class="alert alert-danger" style="display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger me-2" id="assign-remove-btn" onclick="removeAssignment()" style="display:none">
+          <i class="ti ti-unlink me-1"></i>Quitar asignación
+        </button>
+        <button type="button" class="btn btn-primary" id="assign-save-btn" onclick="saveAssignment()">
+          <i class="ti ti-check me-1"></i>Asignar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
@@ -273,7 +318,9 @@
 
   // ── Data ──────────────────────────────────────────────────
   let allDevices = [];
-
+  let refreshTimer = null;
+  let lastRefreshTime = null;
+  const REFRESH_INTERVAL = 30000; // 30 seconds
   const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 
   function isOnline(last_seen) {
@@ -281,7 +328,6 @@
     return (Date.now() - new Date(last_seen).getTime()) < ONLINE_THRESHOLD_MS;
   }
 
-  // Signal bars: 0-5 scale
   function signalBars(level) {
     if (level === null || level === undefined) {
       return `<span class="text-muted small">N/D</span>`;
@@ -302,7 +348,6 @@
   function batteryDisplay(mv) {
     if (mv === null || mv === undefined) return '<span class="text-muted small">N/D</span>';
     const v = (mv / 1000).toFixed(2);
-    // FMC650 internal battery: ~3.7V nominal, 4.2V full, 3.0V empty
     const pct = Math.min(100, Math.max(0, Math.round((mv - 3000) / (4200 - 3000) * 100)));
     const color = pct < 20 ? 'danger' : pct < 50 ? 'warning' : 'success';
     return `<div class="d-flex align-items-center gap-1">
@@ -313,8 +358,8 @@
 
   function extVoltageDisplay(mv) {
     if (mv === null || mv === undefined) return '<span class="text-muted small">N/D</span>';
-    const v = (mv / 1000).toFixed(1);
     if (mv < 100) return `<span class="text-muted small"><i class="ti ti-plug-off me-1"></i>Desconectado</span>`;
+    const v = (mv / 1000).toFixed(1);
     const color = mv >= 11000 ? 'success' : 'warning';
     return `<span class="text-${color}"><i class="ti ti-plug me-1"></i>${v}V</span>`;
   }
@@ -322,19 +367,28 @@
   function formatDate(dt) {
     if (!dt) return '—';
     const d = new Date(dt);
-    const now = new Date();
-    const diff = now - d;
-    if (diff < 60000)     return 'Hace ' + Math.floor(diff/1000) + 's';
-    if (diff < 3600000)   return 'Hace ' + Math.floor(diff/60000) + 'm';
-    if (diff < 86400000)  return 'Hace ' + Math.floor(diff/3600000) + 'h';
+    const diff = Date.now() - d;
+    if (diff < 60000)    return 'Hace ' + Math.floor(diff/1000) + 's';
+    if (diff < 3600000)  return 'Hace ' + Math.floor(diff/60000) + 'm';
+    if (diff < 86400000) return 'Hace ' + Math.floor(diff/3600000) + 'h';
     return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'2-digit', hour:'2-digit', minute:'2-digit' });
   }
 
-  async function loadDevices() {
-    document.getElementById('devices-tbody').innerHTML = `
-      <tr><td colspan="9" class="text-center text-muted py-4">
-        <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
-      </td></tr>`;
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Load & render ─────────────────────────────────────────
+  async function loadDevices(showSpinner = false) {
+    if (showSpinner || !allDevices.length) {
+      document.getElementById('devices-tbody').innerHTML = `
+        <tr><td colspan="9" class="text-center text-muted py-4">
+          <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+        </td></tr>`;
+    }
+    const indicator = document.getElementById('refresh-indicator');
+    indicator.classList.add('refreshing');
+
     try {
       const res = await fetch(`${API}/api/devices/admin`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -343,85 +397,112 @@
       const data = await res.json();
       if (data.success) {
         allDevices = data.devices;
+        lastRefreshTime = new Date();
         updateSummary(allDevices);
-        renderDevices(allDevices);
-      } else {
-        showError(data.error || 'Error al cargar dispositivos');
+        const q = document.getElementById('search-input').value;
+        renderDevices(q ? allDevices.filter(d => matchesFilter(d, q)) : allDevices);
+        updateRefreshIndicator();
       }
     } catch (e) {
-      showError('Servidor no disponible');
+      if (!allDevices.length) showError('Servidor no disponible');
+    } finally {
+      indicator.classList.remove('refreshing');
     }
   }
 
+  function updateRefreshIndicator() {
+    if (!lastRefreshTime) return;
+    const diff = Math.floor((Date.now() - lastRefreshTime) / 1000);
+    document.getElementById('last-refresh-text').textContent =
+      diff < 5 ? 'Actualizado ahora' : `Actualizado hace ${diff}s`;
+  }
+
   function updateSummary(devices) {
-    const online = devices.filter(d => isOnline(d.last_seen)).length;
+    const online     = devices.filter(d => isOnline(d.last_seen)).length;
     const unassigned = devices.filter(d => !d.truck_id).length;
-    const signals = devices.map(d => d.signal_level).filter(s => s !== null && s !== undefined);
-    const avgSignal = signals.length ? (signals.reduce((a,b)=>a+b,0)/signals.length).toFixed(1) : '—';
-    document.getElementById('stat-total').textContent = devices.length;
-    document.getElementById('stat-online').textContent = online;
+    const signals    = devices.map(d => d.signal_level).filter(s => s !== null && s !== undefined);
+    const avgSignal  = signals.length ? (signals.reduce((a,b)=>a+b,0)/signals.length).toFixed(1) : '—';
+    document.getElementById('stat-total').textContent     = devices.length;
+    document.getElementById('stat-online').textContent    = online;
     document.getElementById('stat-unassigned').textContent = unassigned;
-    document.getElementById('stat-signal').textContent = avgSignal !== '—' ? avgSignal + '/5' : '—';
+    document.getElementById('stat-signal').textContent    = avgSignal !== '—' ? avgSignal + '/5' : '—';
     document.getElementById('summary-cards').style.display = '';
-    document.getElementById('count-badge').textContent = devices.length + ' dispositivos';
+    document.getElementById('count-badge').textContent    = devices.length + ' dispositivos';
   }
 
   function renderDevices(devices) {
     const tbody = document.getElementById('devices-tbody');
-
     if (!devices.length) {
       tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">No se encontraron dispositivos</td></tr>`;
       return;
     }
+    tbody.innerHTML = devices.map(d => deviceRow(d)).join('');
+  }
 
-    tbody.innerHTML = devices.map(d => {
-      const online = isOnline(d.last_seen);
-      const sleeping = d.sleep_mode == 1;
-      let statusBadge;
-      if (online) {
-        statusBadge = `<span class="badge badge-online"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`;
-      } else if (sleeping) {
-        statusBadge = `<span class="badge badge-sleep"><span class="status-dot bg-warning me-1"></span>Dormido</span>`;
-      } else {
-        statusBadge = `<span class="badge badge-offline"><span class="status-dot bg-danger me-1"></span>Sin conexión</span>`;
-      }
+  function deviceRow(d) {
+    const online   = isOnline(d.last_seen);
+    const sleeping = d.sleep_mode == 1;
+    let statusBadge;
+    if (online) {
+      statusBadge = `<span class="badge badge-online"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`;
+    } else if (sleeping) {
+      statusBadge = `<span class="badge badge-sleep"><span class="status-dot bg-warning me-1"></span>Dormido</span>`;
+    } else {
+      statusBadge = `<span class="badge badge-offline"><span class="status-dot bg-danger me-1"></span>Sin conexión</span>`;
+    }
 
-      const truck = d.truck_name
-        ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
-        : `<span class="text-muted small">Sin asignar</span>`;
+    const truck = d.truck_name
+      ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
+      : `<span class="text-muted small">Sin asignar</span>`;
 
-      return `<tr>
-        <td>${statusBadge}</td>
-        <td>
-          <div class="fw-bold font-monospace">${escHtml(d.imei)}</div>
-          <small class="text-muted">ID: ${d.id}</small>
-        </td>
-        <td>${signalBars(d.signal_level)}</td>
-        <td>${batteryDisplay(d.battery_mv)}</td>
-        <td>${extVoltageDisplay(d.ext_voltage_mv)}</td>
-        <td>${truck}</td>
-        <td>
-          <div>${formatDate(d.last_seen)}</div>
-          ${d.last_gps_time ? `<small class="text-muted">GPS: ${formatDate(d.last_gps_time)}</small>` : ''}
-        </td>
-        <td class="text-muted">${(d.total_records || 0).toLocaleString()}</td>
-        <td>
-          <a href="${BASE_PATH + '/?imei=' + encodeURIComponent(d.imei)}" class="btn btn-sm btn-ghost-primary" title="Ver en mapa">
-            <i class="ti ti-map-pin"></i>
-          </a>
-        </td>
-      </tr>`;
-    }).join('');
+    const safeImei = escHtml(d.imei);
+
+    return `<tr>
+      <td>${statusBadge}</td>
+      <td>
+        <div class="fw-bold font-monospace">${safeImei}</div>
+        <small class="text-muted">ID: ${d.id}</small>
+      </td>
+      <td>${signalBars(d.signal_level)}</td>
+      <td>${batteryDisplay(d.battery_mv)}</td>
+      <td>${extVoltageDisplay(d.ext_voltage_mv)}</td>
+      <td>${truck}</td>
+      <td>
+        <div>${formatDate(d.last_seen)}</div>
+        ${d.last_gps_time ? `<small class="text-muted">GPS: ${formatDate(d.last_gps_time)}</small>` : ''}
+      </td>
+      <td class="text-muted">${(d.total_records || 0).toLocaleString()}</td>
+      <td class="text-end">
+        <div class="dropdown">
+          <button class="btn btn-sm btn-ghost-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="ti ti-dots-vertical"></i>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a href="${BASE_PATH + '/?imei=' + encodeURIComponent(d.imei)}" class="dropdown-item">
+              <i class="ti ti-map-pin me-2"></i>Ver en mapa
+            </a>
+            <a href="javascript:void(0)" class="dropdown-item" onclick='openAssignModal(${JSON.stringify({imei:d.imei,truck_id:d.truck_id,truck_name:d.truck_name,client_id:d.client_id})})'>
+              <i class="ti ti-truck me-2"></i>${d.truck_id ? 'Reasignar unidad' : 'Asignar a cliente'}
+            </a>
+            ${d.truck_id ? `<a href="javascript:void(0)" class="dropdown-item text-danger" onclick="confirmRemove('${safeImei}')">
+              <i class="ti ti-unlink me-2"></i>Quitar asignación
+            </a>` : ''}
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  function matchesFilter(d, q) {
+    const lower = q.toLowerCase();
+    return (d.imei        || '').toLowerCase().includes(lower) ||
+           (d.truck_name  || '').toLowerCase().includes(lower) ||
+           (d.truck_plate || '').toLowerCase().includes(lower);
   }
 
   function filterDevices(q) {
     if (!q.trim()) { renderDevices(allDevices); return; }
-    const lower = q.toLowerCase();
-    renderDevices(allDevices.filter(d =>
-      (d.imei       || '').toLowerCase().includes(lower) ||
-      (d.truck_name || '').toLowerCase().includes(lower) ||
-      (d.truck_plate|| '').toLowerCase().includes(lower)
-    ));
+    renderDevices(allDevices.filter(d => matchesFilter(d, q)));
   }
 
   function showError(msg) {
@@ -432,11 +513,172 @@
       </td></tr>`;
   }
 
-  function escHtml(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // ── Auto-refresh ──────────────────────────────────────────
+  function startAutoRefresh() {
+    refreshTimer = setInterval(() => {
+      loadDevices(false);
+      updateRefreshIndicator();
+    }, REFRESH_INTERVAL);
+    // Also tick the "last updated X seconds ago" every 5s
+    setInterval(updateRefreshIndicator, 5000);
   }
 
-  loadDevices();
+  // ── Assign modal ──────────────────────────────────────────
+  let assignImei    = null;
+  let allClients    = [];
+  let assignModal   = null;
+
+  function openAssignModal(device) {
+    assignImei = device.imei;
+    document.getElementById('assign-imei-display').textContent = device.imei;
+    document.getElementById('assign-error').style.display = 'none';
+    document.getElementById('assign-truck-wrap').style.display = 'none';
+    document.getElementById('assign-remove-btn').style.display = device.truck_id ? '' : 'none';
+
+    // Reset selects
+    const clientSel = document.getElementById('assign-client-select');
+    clientSel.innerHTML = '<option value="">— Seleccionar cliente —</option>';
+    document.getElementById('assign-truck-select').innerHTML = '<option value="">— Seleccionar unidad —</option>';
+
+    // Load clients if not loaded yet
+    loadClients(device.client_id);
+
+    if (!assignModal) assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
+    assignModal.show();
+  }
+
+  async function loadClients(preselectedClientId) {
+    const sel = document.getElementById('assign-client-select');
+    try {
+      const res = await fetch(`${API}/api/clients`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.success) {
+        allClients = data.clients;
+        sel.innerHTML = '<option value="">— Seleccionar cliente —</option>' +
+          allClients.map(c => `<option value="${c.id}"${c.id == preselectedClientId ? ' selected' : ''}>${escHtml(c.name || c.business_name || 'Cliente ' + c.id)}</option>`).join('');
+        if (preselectedClientId) {
+          onClientChange(preselectedClientId);
+        }
+      }
+    } catch(e) {
+      sel.innerHTML = '<option value="">Error al cargar clientes</option>';
+    }
+  }
+
+  async function onClientChange(preselectedClientId) {
+    const clientId = document.getElementById('assign-client-select').value;
+    const truckWrap = document.getElementById('assign-truck-wrap');
+    const truckSel  = document.getElementById('assign-truck-select');
+
+    if (!clientId) {
+      truckWrap.style.display = 'none';
+      return;
+    }
+    truckSel.innerHTML = '<option value="">Cargando...</option>';
+    truckWrap.style.display = '';
+
+    try {
+      const res  = await fetch(`${API}/api/trucks?client_id=${clientId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.success) {
+        if (!data.trucks.length) {
+          truckSel.innerHTML = '<option value="">No hay unidades para este cliente</option>';
+        } else {
+          truckSel.innerHTML = '<option value="">— Seleccionar unidad —</option>' +
+            data.trucks.map(t => `<option value="${t.id}">${escHtml(t.name)}${t.plate ? ' — ' + escHtml(t.plate) : ''}</option>`).join('');
+        }
+      }
+    } catch(e) {
+      truckSel.innerHTML = '<option value="">Error al cargar unidades</option>';
+    }
+  }
+
+  async function saveAssignment() {
+    const truckId = document.getElementById('assign-truck-select').value;
+    const errEl   = document.getElementById('assign-error');
+    errEl.style.display = 'none';
+
+    if (!truckId) {
+      errEl.textContent = 'Selecciona una unidad.';
+      errEl.style.display = '';
+      return;
+    }
+
+    const btn = document.getElementById('assign-save-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+
+    try {
+      const res = await fetch(`${API}/api/trucks/${truckId}/devices/${encodeURIComponent(assignImei)}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        assignModal.hide();
+        loadDevices(false);
+      } else {
+        errEl.textContent = data.error || 'Error al asignar dispositivo.';
+        errEl.style.display = '';
+      }
+    } catch(e) {
+      errEl.textContent = 'Error de conexión.';
+      errEl.style.display = '';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-check me-1"></i>Asignar';
+    }
+  }
+
+  async function removeAssignment() {
+    const btn   = document.getElementById('assign-remove-btn');
+    const errEl = document.getElementById('assign-error');
+    errEl.style.display = 'none';
+    btn.disabled = true;
+
+    // Find truck_id for this device
+    const device = allDevices.find(d => d.imei === assignImei);
+    if (!device || !device.truck_id) { btn.disabled = false; return; }
+
+    try {
+      const res = await fetch(`${API}/api/trucks/${device.truck_id}/devices/${encodeURIComponent(assignImei)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        assignModal.hide();
+        loadDevices(false);
+      } else {
+        errEl.textContent = data.error || 'Error al quitar asignación.';
+        errEl.style.display = '';
+      }
+    } catch(e) {
+      errEl.textContent = 'Error de conexión.';
+      errEl.style.display = '';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function confirmRemove(imei) {
+    // Close the dropdown first, then remove directly
+    const device = allDevices.find(d => d.imei === imei);
+    if (!device || !device.truck_id) return;
+    if (!confirm(`¿Quitar la asignación del dispositivo ${imei}?`)) return;
+    try {
+      const res = await fetch(`${API}/api/trucks/${device.truck_id}/devices/${encodeURIComponent(imei)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) loadDevices(false);
+    } catch(e) {}
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  loadDevices(true);
+  startAutoRefresh();
 </script>
 </body>
 </html>
