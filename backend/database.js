@@ -318,6 +318,20 @@ const db = {
     await pool.query('UPDATE devices SET truck_id = NULL WHERE imei = ?', [imei]);
   },
 
+  async getClientCounts() {
+    // Returns truck_count and device_count keyed by client_id
+    const [rows] = await pool.query(`
+      SELECT
+        t.client_id,
+        COUNT(DISTINCT t.id)  AS truck_count,
+        COUNT(DISTINCT d.id)  AS device_count
+      FROM trucks t
+      LEFT JOIN devices d ON d.truck_id = t.id
+      GROUP BY t.client_id
+    `);
+    return rows;
+  },
+
   async getUnassignedDevices() {
     const [rows] = await pool.query(
       'SELECT imei, last_seen, total_records FROM devices WHERE truck_id IS NULL ORDER BY last_seen DESC'

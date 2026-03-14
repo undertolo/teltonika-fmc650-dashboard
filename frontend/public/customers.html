@@ -6,15 +6,10 @@
   <title>Customers — Fleet Management</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* Tabler-style page layout */
     body { background: var(--bg-color); }
+    .page-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
 
-    .page-wrapper {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
+    /* Navbar */
     .navbar {
       background: var(--card-bg);
       border-bottom: 1px solid var(--border-color);
@@ -23,167 +18,111 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      position: sticky; top: 0; z-index: 100;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
-
-    .navbar-brand {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-color);
-      text-decoration: none;
-    }
-
-    .navbar-brand .brand-icon { font-size: 1.25rem; }
-
-    .navbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .user-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-      color: var(--text-light);
-    }
-
-    .role-pill {
-      padding: 0.15rem 0.5rem;
-      border-radius: 100px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-
-    .btn-icon {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-light);
-      font-size: 1rem;
-      padding: 0.35rem;
-      border-radius: var(--radius);
-      transition: background 0.15s, color 0.15s;
-      display: flex;
-      align-items: center;
-    }
-
+    .navbar-brand { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; color: var(--text-color); text-decoration: none; }
+    .navbar-actions { display: flex; align-items: center; gap: 1rem; }
+    .user-badge { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-light); }
+    .role-pill { padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+    .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 1rem; padding: 0.35rem; border-radius: var(--radius); transition: background 0.15s, color 0.15s; display: flex; align-items: center; }
     .btn-icon:hover { background: var(--bg-color); color: var(--text-color); }
 
+    /* Page header */
     .page-header {
       background: var(--card-bg);
       border-bottom: 1px solid var(--border-color);
       padding: 1.25rem 1.5rem;
-    }
-
-    .page-header-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--text-color);
-      margin: 0 0 0.15rem;
-    }
-
-    .page-header-subtitle {
-      font-size: 0.875rem;
-      color: var(--text-light);
-      margin: 0;
-    }
-
-    .page-body {
-      padding: 1.5rem;
-      flex: 1;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .card-header {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
+      flex-wrap: wrap;
     }
-
-    .card-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text-color);
-      margin: 0;
-    }
+    .page-header-title { font-size: 1.25rem; font-weight: 600; color: var(--text-color); margin: 0 0 0.1rem; }
+    .page-header-subtitle { font-size: 0.875rem; color: var(--text-light); margin: 0; }
 
     .search-input {
-      padding: 0.35rem 0.75rem;
+      padding: 0.4rem 0.875rem;
       border: 1px solid var(--border-color);
       border-radius: var(--radius);
       font-size: 0.875rem;
       background: var(--bg-color);
       color: var(--text-color);
-      width: 220px;
+      width: 240px;
       outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
+    .search-input:focus { border-color: #90b5e2; box-shadow: 0 0 0 0.2rem rgba(32,107,196,0.2); }
 
-    .search-input:focus {
-      border-color: #90b5e2;
-      box-shadow: 0 0 0 0.2rem rgba(32,107,196,0.2);
+    /* Page body */
+    .page-body { padding: 1.5rem; flex: 1; }
+
+    /* Client list */
+    .clients-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
-    .table-container { overflow-x: auto; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
+    .client-row {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 0.875rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+    }
+    .client-row:hover {
+      border-color: #206bc4;
+      box-shadow: 0 2px 8px rgba(32,107,196,0.1);
     }
 
-    thead th {
-      padding: 0.625rem 1.25rem;
-      text-align: left;
-      font-size: 0.7rem;
+    /* Avatar circle */
+    .client-avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: #206bc4;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Name block */
+    .client-info { flex: 1; min-width: 0; }
+    .client-name { font-weight: 600; font-size: 0.9rem; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .client-sub  { font-size: 0.78rem; color: var(--text-light); margin-top: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Stats chips */
+    .client-stats { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 100px;
+      font-size: 0.78rem;
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--text-light);
+      border: 1px solid var(--border-color);
       background: var(--bg-color);
-      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
       white-space: nowrap;
     }
+    .stat-chip .chip-icon { font-size: 0.9rem; }
+    .stat-chip.trucks  { border-color: rgba(247,103,7,0.3);  background: rgba(247,103,7,0.07);  color: #c85a00; }
+    .stat-chip.devices { border-color: rgba(32,107,196,0.3); background: rgba(32,107,196,0.08); color: #206bc4; }
 
-    tbody tr {
-      border-bottom: 1px solid var(--border-color);
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-
-    tbody tr:last-child { border-bottom: none; }
-
-    tbody tr:hover { background: rgba(32,107,196,0.04); }
-
-    tbody td {
-      padding: 0.75rem 1.25rem;
-      color: var(--text-color);
-      vertical-align: middle;
-    }
-
-    .client-name { font-weight: 500; }
-
-    .client-business { font-size: 0.8rem; color: var(--text-light); }
-
+    /* Status badge */
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -194,252 +133,183 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.03em;
+      flex-shrink: 0;
     }
-
     .status-active   { background: rgba(47,179,68,0.1);  color: #2fb344; }
     .status-inactive { background: rgba(214,57,57,0.1);  color: #d63939; }
     .status-default  { background: rgba(98,105,118,0.1); color: #616876; }
+    .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 
-    .status-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: currentColor;
-    }
+    /* Arrow */
+    .client-arrow { color: var(--text-light); font-size: 1rem; flex-shrink: 0; }
 
-    .btn-view {
-      padding: 0.3rem 0.75rem;
-      background: #206bc4;
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s;
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    .btn-view:hover { background: #1d60b0; }
-
-    .empty-state {
-      padding: 3rem 1.5rem;
-      text-align: center;
-      color: var(--text-light);
-    }
-
+    /* Empty / error */
+    .empty-state { padding: 3rem 1.5rem; text-align: center; color: var(--text-light); background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); }
     .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
     .empty-state-text { font-size: 0.875rem; }
 
-    .loading-row td {
-      padding: 2rem;
-      text-align: center;
-      color: var(--text-light);
-    }
-
-    /* Dark mode logout/back buttons */
-    .btn-secondary-sm {
-      padding: 0.3rem 0.75rem;
-      background: var(--bg-color);
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      border-radius: var(--radius);
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    .btn-secondary-sm:hover { background: var(--border-color); }
+    /* Counter badge in header */
+    .count-badge { font-size: 0.75rem; font-weight: 600; color: var(--text-light); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 100px; padding: 0.15rem 0.5rem; }
   </style>
 </head>
 <body>
-  <div class="page-wrapper">
+<div class="page-wrapper">
 
-    <!-- Navbar -->
-    <nav class="navbar">
-      <a href="#" class="navbar-brand">
-        <span class="brand-icon">📡</span>
-        Fleet Management
-      </a>
-      <div class="navbar-actions">
-        <div class="user-badge">
-          <span id="nav-user-name"></span>
-          <span id="nav-role-pill" class="role-pill"></span>
-        </div>
-        <button class="btn-icon" onclick="toggleDarkMode()" title="Toggle dark mode" id="dark-btn">🌙</button>
-        <button class="btn-icon" onclick="doLogout()" title="Logout" style="color:#d63939">⏻</button>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="#" class="navbar-brand">📡 Fleet Management</a>
+    <div class="navbar-actions">
+      <div class="user-badge">
+        <span id="nav-user-name"></span>
+        <span id="nav-role-pill" class="role-pill"></span>
       </div>
-    </nav>
-
-    <!-- Page header -->
-    <div class="page-header">
-      <h1 class="page-header-title">Customers</h1>
-      <p class="page-header-subtitle">Select a customer to view their devices on the map</p>
+      <button class="btn-icon" onclick="toggleDarkMode()" title="Toggle dark mode" id="dark-btn">🌙</button>
+      <button class="btn-icon" onclick="doLogout()" title="Logout" style="color:#d63939">⏻</button>
     </div>
+  </nav>
 
-    <!-- Page body -->
-    <div class="page-body">
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">Client List</h2>
-          <input type="search" class="search-input" id="search-input" placeholder="Search customers..." oninput="filterClients(this.value)">
-        </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Business Name</th>
-                <th>Phone</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="clients-tbody">
-              <tr class="loading-row"><td colspan="6">Loading customers...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-header-title">Customers <span class="count-badge" id="count-badge"></span></h1>
+      <p class="page-header-subtitle">Select a customer to manage their trucks and devices</p>
     </div>
-
+    <input type="search" class="search-input" id="search-input" placeholder="Search customers..." oninput="filterClients(this.value)">
   </div>
 
-  <script>
-    const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
-    const API = window.location.origin + BASE_PATH;
+  <!-- Page body -->
+  <div class="page-body">
+    <div id="clients-list" class="clients-list">
+      <div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading customers...</div></div>
+    </div>
+  </div>
 
-    // Auth check
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (!token || !user) {
-      window.location.replace(BASE_PATH + '/login.html');
-    }
-    if (user && user.role !== 'admin' && user.role !== 'superuser') {
-      window.location.replace(BASE_PATH + '/');
-    }
+</div>
 
-    // Dark mode
-    (function () {
-      if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark');
-        document.getElementById('dark-btn').textContent = '☀️';
+<script>
+  const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+  const API = window.location.origin + BASE_PATH;
+
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!token || !user) window.location.replace(BASE_PATH + '/login.html');
+  if (user && user.role !== 'admin' && user.role !== 'superuser') window.location.replace(BASE_PATH + '/');
+
+  // Dark mode
+  (function() {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark');
+      document.getElementById('dark-btn').textContent = '☀️';
+    }
+  })();
+  function toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark');
+    document.getElementById('dark-btn').textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDark);
+  }
+  function doLogout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace(BASE_PATH + '/login.html');
+  }
+
+  // User info
+  const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
+  document.getElementById('nav-user-name').textContent = user.name || user.username;
+  const pill = document.getElementById('nav-role-pill');
+  pill.textContent = user.role;
+  pill.style.background = (roleColors[user.role] || '#206bc4') + '22';
+  pill.style.color = roleColors[user.role] || '#206bc4';
+
+  let allClients = [];
+
+  async function loadClients() {
+    try {
+      const res = await fetch(`${API}/api/clients`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401) { doLogout(); return; }
+      const data = await res.json();
+      if (data.success) {
+        allClients = data.clients;
+        renderClients(allClients);
+      } else {
+        showError(data.error || 'Failed to load customers');
       }
-    })();
+    } catch (e) {
+      showError('Server unavailable');
+    }
+  }
 
-    function toggleDarkMode() {
-      const isDark = document.body.classList.toggle('dark');
-      document.getElementById('dark-btn').textContent = isDark ? '☀️' : '🌙';
-      localStorage.setItem('darkMode', isDark);
+  function renderClients(clients) {
+    const container = document.getElementById('clients-list');
+    const badge = document.getElementById('count-badge');
+    badge.textContent = clients.length;
+
+    if (!clients.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">No customers found</div></div>`;
+      return;
     }
 
-    function doLogout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.replace(BASE_PATH + '/login.html');
-    }
+    container.innerHTML = clients.map(c => {
+      const initial = (c.name || '?')[0].toUpperCase();
+      const statusClass = c.status === 'ACTIVE'   ? 'status-active'
+                        : c.status === 'INACTIVE' ? 'status-inactive'
+                        : 'status-default';
+      const sub = c.business_name && c.business_name !== c.name ? escHtml(c.business_name) : (c.phone_number ? escHtml(c.phone_number) : '');
 
-    // Render user info
-    const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
-    const pill = document.getElementById('nav-role-pill');
-    document.getElementById('nav-user-name').textContent = user.name || user.username;
-    pill.textContent = user.role;
-    pill.style.background = (roleColors[user.role] || '#206bc4') + '22';
-    pill.style.color = roleColors[user.role] || '#206bc4';
+      return `
+        <div class="client-row" onclick="viewClient(${c.id})">
+          <div class="client-avatar" style="background:${avatarColor(c.id)}">${escHtml(initial)}</div>
+          <div class="client-info">
+            <div class="client-name">${escHtml(c.name || '—')}</div>
+            ${sub ? `<div class="client-sub">${sub}</div>` : ''}
+          </div>
+          <div class="client-stats">
+            <span class="stat-chip trucks" title="Trucks">
+              <span class="chip-icon">🚛</span>
+              ${c.truck_count}
+            </span>
+            <span class="stat-chip devices" title="Devices">
+              <span class="chip-icon">📡</span>
+              ${c.device_count}
+            </span>
+            <span class="status-badge ${statusClass}">
+              <span class="status-dot"></span>
+              ${escHtml(c.status || '—')}
+            </span>
+          </div>
+          <span class="client-arrow">›</span>
+        </div>`;
+    }).join('');
+  }
 
-    // Load clients
-    let allClients = [];
+  function filterClients(q) {
+    if (!q.trim()) { renderClients(allClients); return; }
+    const lower = q.toLowerCase();
+    renderClients(allClients.filter(c =>
+      (c.name          || '').toLowerCase().includes(lower) ||
+      (c.business_name || '').toLowerCase().includes(lower) ||
+      (c.phone_number  || '').toLowerCase().includes(lower)
+    ));
+  }
 
-    async function loadClients() {
-      try {
-        const res = await fetch(`${API}/api/clients`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.status === 401) { doLogout(); return; }
-        const data = await res.json();
-        if (data.success) {
-          allClients = data.clients;
-          renderClients(allClients);
-        } else {
-          showError(data.error || 'Failed to load customers');
-        }
-      } catch (e) {
-        showError('Server unavailable');
-      }
-    }
+  function viewClient(id) {
+    window.location.href = BASE_PATH + '/trucks.html?client_id=' + id;
+  }
 
-    function renderClients(clients) {
-      const tbody = document.getElementById('clients-tbody');
-      if (!clients.length) {
-        tbody.innerHTML = `
-          <tr><td colspan="6">
-            <div class="empty-state">
-              <div class="empty-state-icon">🔍</div>
-              <div class="empty-state-text">No customers found</div>
-            </div>
-          </td></tr>`;
-        return;
-      }
-      tbody.innerHTML = clients.map((c, i) => {
-        const statusClass = c.status === 'ACTIVE' ? 'status-active'
-                          : c.status === 'INACTIVE' ? 'status-inactive'
-                          : 'status-default';
-        const statusLabel = c.status || '—';
-        return `
-          <tr onclick="viewClient(${c.id})">
-            <td style="color:var(--text-light);width:2.5rem">${i + 1}</td>
-            <td>
-              <div class="client-name">${escHtml(c.name || '—')}</div>
-            </td>
-            <td>
-              <div class="client-business">${escHtml(c.business_name || '—')}</div>
-            </td>
-            <td>${escHtml(c.phone_number || '—')}</td>
-            <td>
-              <span class="status-badge ${statusClass}">
-                <span class="status-dot"></span>
-                ${escHtml(statusLabel)}
-              </span>
-            </td>
-            <td>
-              <button class="btn-view" onclick="event.stopPropagation();viewClient(${c.id})">View Devices →</button>
-            </td>
-          </tr>`;
-      }).join('');
-    }
+  function showError(msg) {
+    document.getElementById('clients-list').innerHTML =
+      `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text" style="color:#d63939">${escHtml(msg)}</div></div>`;
+  }
 
-    function filterClients(q) {
-      if (!q.trim()) { renderClients(allClients); return; }
-      const lower = q.toLowerCase();
-      const filtered = allClients.filter(c =>
-        (c.name || '').toLowerCase().includes(lower) ||
-        (c.business_name || '').toLowerCase().includes(lower) ||
-        (c.phone_number || '').toLowerCase().includes(lower)
-      );
-      renderClients(filtered);
-    }
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
-    function viewClient(id) {
-      window.location.href = BASE_PATH + '/trucks.html?client_id=' + id;
-    }
+  // Generate a consistent color from the client id
+  const COLORS = ['#206bc4','#2fb344','#f76707','#ae3ec9','#d6336c','#0ca678','#4263eb','#d63939','#f59f00','#17a2b8'];
+  function avatarColor(id) { return COLORS[id % COLORS.length]; }
 
-    function showError(msg) {
-      document.getElementById('clients-tbody').innerHTML =
-        `<tr><td colspan="6" style="padding:2rem;text-align:center;color:#d63939">${escHtml(msg)}</td></tr>`;
-    }
-
-    function escHtml(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    loadClients();
-  </script>
+  loadClients();
+</script>
 </body>
 </html>

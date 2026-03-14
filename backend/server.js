@@ -184,8 +184,18 @@ app.delete('/api/users/:id', requireAuth, requireRole('superuser'), async (req, 
 // GET /api/clients - Lista de clientes (admin/superuser)
 app.get('/api/clients', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
   try {
-    const clients = await fahrDb.getClients();
-    res.json({ success: true, clients });
+    const [clients, counts] = await Promise.all([
+      fahrDb.getClients(),
+      db.getClientCounts()
+    ]);
+    const countMap = {};
+    counts.forEach(r => { countMap[r.client_id] = r; });
+    const merged = clients.map(c => ({
+      ...c,
+      truck_count:  (countMap[c.id]?.truck_count  || 0),
+      device_count: (countMap[c.id]?.device_count || 0)
+    }));
+    res.json({ success: true, clients: merged });
   } catch (error) {
     console.error('Error fetching clients:', error);
     res.status(500).json({ success: false, error: 'Error fetching clients' });
