@@ -12,15 +12,75 @@ const app = {
   routePolyline: null,
   autoRefreshInterval: null,
   user: null,
+  clientId: null,
+  clientImeis: null, // Set of IMEIs if filtered by client
 
   // Inicialización
   async init() {
     if (!this.initAuth()) return;
     this.initDarkMode();
+
+    // Read client_id from URL
+    const params = new URLSearchParams(window.location.search);
+    this.clientId = params.get('client_id') || null;
+
+    // admin/superuser without client filter → redirect to customer list
+    if (!this.clientId && (this.user.role === 'admin' || this.user.role === 'superuser')) {
+      window.location.replace(BASE_PATH + '/customers.html');
+      return;
+    }
+
+    // If filtering by client, load allowed IMEIs first
+    if (this.clientId) {
+      await this.loadClientFilter();
+    }
+
     this.initMap();
     await this.loadDevices();
     this.startAutoRefresh();
     this.updateServerStatus();
+  },
+
+  // Load the list of IMEIs for the selected client
+  async loadClientFilter() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/clients/${this.clientId}/devices`, {
+        headers: this.authHeaders()
+      });
+      if (res.status === 401) { this.handleUnauthorized(); return; }
+      const data = await res.json();
+      if (data.success) {
+        // Build a set of known teltonika IMEIs from the client's devices
+        const imeis = data.devices
+          .filter(d => d.teltonika)
+          .map(d => d.teltonika.imei);
+        this.clientImeis = imeis.length > 0 ? new Set(imeis) : null;
+
+        // Show client name in header and back button
+        const headerEl = document.querySelector('header h1');
+        if (headerEl) {
+          headerEl.innerHTML = `📡 Teltonika FMC650 Dashboard`;
+        }
+        this.showBackToCustomers();
+      }
+    } catch (e) {
+      console.error('Error loading client filter:', e);
+    }
+  },
+
+  showBackToCustomers() {
+    const headerInfo = document.querySelector('.header-info');
+    if (!headerInfo) return;
+    const existing = document.getElementById('back-btn');
+    if (existing) return;
+    const btn = document.createElement('a');
+    btn.id = 'back-btn';
+    btn.href = BASE_PATH + '/customers.html';
+    btn.className = 'logout-btn';
+    btn.title = 'Back to Customers';
+    btn.style.textDecoration = 'none';
+    btn.textContent = '← Customers';
+    headerInfo.insertBefore(btn, headerInfo.firstChild);
   },
 
   // Auth
@@ -99,7 +159,10 @@ const app = {
       const data = await response.json();
 
       if (data.success) {
-        this.displayDevices(data.devices);
+        const devices = this.clientImeis
+          ? data.devices.filter(d => this.clientImeis.has(d.imei))
+          : data.devices;
+        this.displayDevices(devices);
         this.updateLastUpdate();
         this.updateServerStatus(true);
       } else {

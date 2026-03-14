@@ -254,9 +254,46 @@ const db = {
   }
 };
 
+// Pool de conexiones a fahr_production (clientes)
+const fahrPool = mysql.createPool({
+  host: process.env.FAHR_DB_HOST || 'localhost',
+  port: process.env.FAHR_DB_PORT || 3306,
+  user: process.env.FAHR_DB_USER || 'webusrdsh',
+  password: process.env.FAHR_DB_PASSWORD || '',
+  database: process.env.FAHR_DB_NAME || 'fahr_production',
+  waitForConnections: true,
+  connectionLimit: 5,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
+});
+
+const fahrDb = {
+  async getClients() {
+    const [rows] = await fahrPool.query(`
+      SELECT id, name, business_name, phone_number, status
+      FROM client
+      ORDER BY name ASC
+    `);
+    return rows;
+  },
+
+  async getClientDevices(clientId) {
+    // Get devices from fahr_production assigned to this client
+    // Returns mac_address which we cross-reference with teltonika.devices by IMEI
+    const [rows] = await fahrPool.query(`
+      SELECT id, mac_address, name
+      FROM device
+      WHERE client_id = ?
+    `, [clientId]);
+    return rows;
+  }
+};
+
 module.exports = {
   pool,
   testConnection,
   createTables,
-  db
+  db,
+  fahrDb
 };

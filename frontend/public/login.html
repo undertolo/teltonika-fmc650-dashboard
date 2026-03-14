@@ -62,7 +62,12 @@
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
           const base = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
-          window.location.replace(base + '/');
+          const role = data.user.role;
+          if (role === 'admin' || role === 'superuser') {
+            window.location.replace(base + '/customers.html');
+          } else {
+            window.location.replace(base + '/');
+          }
         } else {
           throw new Error(data.error || 'Login failed');
         }

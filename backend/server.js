@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const { testConnection, createTables, db } = require('./database');
+const { testConnection, createTables, db, fahrDb } = require('./database');
 const { login, requireAuth, requireRole } = require('./auth');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
@@ -176,6 +176,41 @@ app.delete('/api/users/:id', requireAuth, requireRole('superuser'), async (req, 
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error deleting user' });
+  }
+});
+
+// ==================== RUTAS DE CLIENTES ====================
+
+// GET /api/clients - Lista de clientes (admin/superuser)
+app.get('/api/clients', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const clients = await fahrDb.getClients();
+    res.json({ success: true, clients });
+  } catch (error) {
+    console.error('Error fetching clients:', error);
+    res.status(500).json({ success: false, error: 'Error fetching clients' });
+  }
+});
+
+// GET /api/clients/:id/devices - Dispositivos de un cliente
+app.get('/api/clients/:id/devices', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const clientDevices = await fahrDb.getClientDevices(req.params.id);
+    // Cross-reference mac_address with teltonika devices (mac stored without colons = last 12 hex = IMEI-like)
+    // The fahr device.mac_address field: we try to match by looking at all teltonika devices
+    const teltonikaDevices = await db.getDevices();
+    const result = clientDevices.map(cd => {
+      const mac = (cd.mac_address || '').toLowerCase().replace(/[^a-f0-9]/g, '');
+      const matched = teltonikaDevices.find(td => {
+        const imei = (td.imei || '').toLowerCase();
+        return imei === mac || imei.endsWith(mac) || mac.endsWith(imei);
+      });
+      return { ...cd, teltonika: matched || null };
+    });
+    res.json({ success: true, devices: result });
+  } catch (error) {
+    console.error('Error fetching client devices:', error);
+    res.status(500).json({ success: false, error: 'Error fetching client devices' });
   }
 });
 
