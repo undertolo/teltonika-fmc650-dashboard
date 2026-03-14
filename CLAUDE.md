@@ -15,7 +15,7 @@ Real-time GPS tracking dashboard for Teltonika FMC650 fleet management devices. 
 ```bash
 cd backend
 npm install          # Install dependencies
-npm start            # Production (node server.js, port 3000)
+npm start            # Production (node server.js, port 3001)
 npm run dev          # Development with auto-reload (nodemon)
 npm run setup        # Initialize/reset MySQL database schema
 ```
@@ -26,13 +26,34 @@ cd python_server
 python3 teltonika_server.py   # Start TCP listener (port 8000 by default)
 ```
 
+### Systemd Services (production)
+Both servers run as systemd services and start automatically on boot.
+
+```bash
+# Python TCP server
+systemctl status|start|stop|restart teltonika-server
+journalctl -u teltonika-server -f
+
+# Node.js backend
+systemctl status|start|stop|restart teltonika-backend
+journalctl -u teltonika-backend -f
+```
+
+Service unit files are in `systemd/` and installed at `/etc/systemd/system/`.
+To install on a new server:
+```bash
+cp systemd/*.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now teltonika-server teltonika-backend
+```
+
 ## Architecture
 
 ### Data Flow
 ```
 Teltonika FMC650 device → TCP:8000 → python_server/teltonika_server.py
   → MySQL (teltonika DB)
-  → HTTP:3000 → backend/server.js (Express REST API)
+  → HTTP:3001 → backend/server.js (Express REST API)
   → /frontend/public/js/app.js (polls every 30s)
 ```
 
@@ -60,7 +81,7 @@ Both servers use `.env` files (not committed):
 
 **`backend/.env`:**
 ```
-DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME=teltonika, PORT=3000
+DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME=teltonika, PORT=3001
 ```
 
 **`python_server/.env`:**
