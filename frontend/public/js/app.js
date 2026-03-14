@@ -376,6 +376,35 @@ const app = {
     console.log('🔄 Auto-refresh iniciado (30s)');
   },
 
+  // Reset map to show all devices
+  showAllDevices() {
+    this.selectedDevice = null;
+
+    // Clear route
+    if (this.routePolyline) {
+      this.map.removeLayer(this.routePolyline);
+      this.routePolyline = null;
+    }
+
+    // Deselect sidebar item and update marker icons
+    document.querySelectorAll('.device-item').forEach(item => item.classList.remove('active'));
+    const deviceMap = Object.fromEntries(this.devices.map(d => [d.imei, d]));
+    Object.entries(this.markers).forEach(([imei, marker]) => {
+      const device = deviceMap[imei];
+      if (device) marker.setIcon(this.createDeviceIcon(this.isDeviceOnline(device.last_seen), false));
+    });
+
+    // Hide info panels
+    document.getElementById('device-info').style.display = 'none';
+    document.getElementById('stats-grid').style.display = 'none';
+
+    // Fit map to all markers
+    const markerList = Object.values(this.markers);
+    if (markerList.length > 0) {
+      this.map.fitBounds(L.featureGroup(markerList).getBounds().pad(0.2));
+    }
+  },
+
   // Detener auto-refresh
   stopAutoRefresh() {
     if (this.autoRefreshInterval) {

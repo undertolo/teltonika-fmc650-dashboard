@@ -107,6 +107,10 @@ h1 {
     font-weight: 600;
 }
 
+.card .map-header h2 {
+    margin-bottom: 0;
+}
+
 /* Sidebar */
 .sidebar {
     height: fit-content;
@@ -167,6 +171,34 @@ h1 {
 
 .status-offline {
     background: #95a5a6;
+}
+
+/* Map header */
+.map-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.map-header h2 {
+    margin-bottom: 0;
+}
+
+.show-all-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.show-all-btn:hover {
+    background: #1a252f;
 }
 
 /* Map */
