@@ -1,0 +1,14 @@
+[Unit]
+Description=Teltonika FMC650 Node.js Backend
+After=network.target mysqld.service
+Wants=mysqld.service
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/fahrelectronics.com/public_html/newdashboard/backend
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
