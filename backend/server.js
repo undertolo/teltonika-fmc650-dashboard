@@ -226,6 +226,16 @@ app.get('/api/clients/:id/devices', requireAuth, requireRole('admin', 'superuser
 
 // ==================== RUTAS DE TRUCKS ====================
 
+// GET /api/trucks/all — all trucks across all clients (vehicles admin page)
+app.get('/api/trucks/all', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const trucks = await db.getAllTrucks();
+    res.json({ success: true, trucks });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error fetching trucks' });
+  }
+});
+
 // GET /api/trucks?client_id=X
 app.get('/api/trucks', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
   try {
@@ -252,9 +262,9 @@ app.get('/api/trucks/:id', requireAuth, requireRole('admin', 'superuser'), async
 // POST /api/trucks
 app.post('/api/trucks', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
   try {
-    const { client_id, name, plate, description } = req.body;
+    const { client_id, name, plate, description, brand, model, year, color } = req.body;
     if (!client_id || !name) return res.status(400).json({ success: false, error: 'client_id and name required' });
-    const id = await db.createTruck(client_id, name, plate, description);
+    const id = await db.createTruck(client_id, name, plate, description, brand, model, year, color);
     res.json({ success: true, id });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error creating truck' });
@@ -264,8 +274,8 @@ app.post('/api/trucks', requireAuth, requireRole('admin', 'superuser'), async (r
 // PUT /api/trucks/:id
 app.put('/api/trucks/:id', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
   try {
-    const { name, plate, description } = req.body;
-    await db.updateTruck(req.params.id, { name, plate, description });
+    const { client_id, name, plate, description, brand, model, year, color } = req.body;
+    await db.updateTruck(req.params.id, { client_id, name, plate, description, brand, model, year, color });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error updating truck' });

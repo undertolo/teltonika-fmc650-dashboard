@@ -130,6 +130,15 @@ async function createTables() {
                           ADD INDEX IF NOT EXISTS idx_truck (truck_id)
     `);
 
+    // Add vehicle detail columns to trucks if not exists
+    await connection.query(`
+      ALTER TABLE trucks
+        ADD COLUMN IF NOT EXISTS brand  VARCHAR(100) NULL,
+        ADD COLUMN IF NOT EXISTS model  VARCHAR(100) NULL,
+        ADD COLUMN IF NOT EXISTS year   SMALLINT     NULL,
+        ADD COLUMN IF NOT EXISTS color  VARCHAR(50)  NULL
+    `);
+
     console.log('✅ Tablas verificadas/creadas');
   } catch (error) {
     console.error('❌ Error creando tablas:', error.message);
@@ -277,6 +286,20 @@ const db = {
     return rows;
   },
 
+  async getAllTrucks() {
+    const [rows] = await pool.query(`
+      SELECT t.*,
+             COUNT(d.id) AS device_count,
+             c.name      AS client_name
+      FROM trucks t
+      LEFT JOIN devices d ON d.truck_id = t.id
+      LEFT JOIN fahr_production.client c ON c.id = t.client_id
+      GROUP BY t.id
+      ORDER BY t.client_id ASC, t.name ASC
+    `);
+    return rows;
+  },
+
   async getTruck(id) {
     const [[truck]] = await pool.query('SELECT * FROM trucks WHERE id = ?', [id]);
     if (!truck) return null;
@@ -286,10 +309,10 @@ const db = {
     return { ...truck, devices };
   },
 
-  async createTruck(clientId, name, plate, description) {
+  async createTruck(clientId, name, plate, description, brand, model, year, color) {
     const [result] = await pool.query(
-      'INSERT INTO trucks (client_id, name, plate, description) VALUES (?, ?, ?, ?)',
-      [clientId, name, plate || null, description || null]
+      'INSERT INTO trucks (client_id, name, plate, description, brand, model, year, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [clientId, name, plate || null, description || null, brand || null, model || null, year || null, color || null]
     );
     return result.insertId;
   },
@@ -297,9 +320,14 @@ const db = {
   async updateTruck(id, fields) {
     const sets = [];
     const values = [];
+    if (fields.client_id   !== undefined) { sets.push('client_id = ?');   values.push(fields.client_id); }
     if (fields.name        !== undefined) { sets.push('name = ?');        values.push(fields.name); }
     if (fields.plate       !== undefined) { sets.push('plate = ?');       values.push(fields.plate); }
     if (fields.description !== undefined) { sets.push('description = ?'); values.push(fields.description); }
+    if (fields.brand       !== undefined) { sets.push('brand = ?');       values.push(fields.brand); }
+    if (fields.model       !== undefined) { sets.push('model = ?');       values.push(fields.model); }
+    if (fields.year        !== undefined) { sets.push('year = ?');        values.push(fields.year); }
+    if (fields.color       !== undefined) { sets.push('color = ?');       values.push(fields.color); }
     if (sets.length === 0) return;
     values.push(id);
     await pool.query(`UPDATE trucks SET ${sets.join(', ')} WHERE id = ?`, values);

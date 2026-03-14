@@ -227,7 +227,7 @@
     // Configuración dropdown: visible to admin + superuser
     if (user.role === 'admin' || user.role === 'superuser') {
       document.getElementById('nav-settings-wrap').style.display = '';
-      document.getElementById('nav-vehicles-link').href = BASE_PATH + '/customers.html';
+      document.getElementById('nav-vehicles-link').href = BASE_PATH + '/vehicles.html';
       document.getElementById('nav-devices-link').href = BASE_PATH + '/devices-admin.html';
     }
     if (user.role === 'superuser') {
