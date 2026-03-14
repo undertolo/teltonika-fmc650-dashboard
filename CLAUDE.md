@@ -47,6 +47,12 @@ systemctl daemon-reload
 systemctl enable --now teltonika-server teltonika-backend
 ```
 
+## Logging
+
+- **Python server** — logs to stdout, captured by journald (`journalctl -u teltonika-server -f`)
+- **Node.js backend** — logs to stdout, captured by journald (`journalctl -u teltonika-backend -f`)
+- `mysql.connector` library logs are suppressed to WARNING in `teltonika_server.py`
+
 ## Architecture
 
 ### Data Flow
