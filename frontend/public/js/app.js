@@ -38,7 +38,7 @@ const app = {
 
   showUserInfo() {
     const roleColors = { superuser: '#9b59b6', admin: '#e74c3c', owner: '#e67e22', driver: '#2ecc71' };
-    const color = roleColors[this.user.role] || '#3498db';
+    const color = roleColors[this.user.role] || '#206bc4';
     document.getElementById('user-info').innerHTML = `
       <span class="user-name">${this.user.name || this.user.username}</span>
       <span class="role-badge" style="background:${color}">${this.user.role}</span>
@@ -209,7 +209,7 @@ const app = {
 
   // Create a colored circle icon for a device marker
   createDeviceIcon(isOnline, isSelected) {
-    const color = isSelected ? '#e74c3c' : isOnline ? '#2ecc71' : '#95a5a6';
+    const color = isSelected ? '#d63939' : isOnline ? '#2fb344' : '#94a3b8';
     const size = isSelected ? 18 : 14;
     return L.divIcon({
       html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:2px solid white;box-shadow:0 1px 5px rgba(0,0,0,0.5)"></div>`,
@@ -222,7 +222,7 @@ const app = {
 
   // Build popup HTML for a marker
   buildMarkerPopup(pos, isOnline) {
-    const statusColor = isOnline ? '#2ecc71' : '#95a5a6';
+    const statusColor = isOnline ? '#2fb344' : '#94a3b8';
     const statusLabel = isOnline ? 'En línea' : 'Sin conexión';
     return `
       <b>${pos.imei}</b><br>
@@ -367,7 +367,7 @@ const app = {
 
     // Crear polyline
     this.routePolyline = L.polyline(coordinates, {
-      color: '#3498db',
+      color: '#206bc4',
       weight: 3,
       opacity: 0.7
     }).addTo(this.map);
