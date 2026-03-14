@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teltonika FMC650 Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>📡 Teltonika FMC650 Dashboard</h1>
+        <div class="header-info">
+            <span id="server-status" class="status-badge">●</span>
+            <span id="last-update">Actualizando...</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Sidebar con lista de dispositivos -->
+            <aside class="sidebar">
+                <div class="card">
+                    <h2>Dispositivos</h2>
+                    <button class="refresh-btn" onclick="app.loadDevices()">
+                        🔄 Actualizar
+                    </button>
+                    <div id="device-list" class="device-list">
+                        <div class="loading">Cargando dispositivos...</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Mapa principal -->
+            <main class="main-content">
+                <div class="card">
+                    <h2>Mapa en Tiempo Real</h2>
+                    <div id="map"></div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Información del dispositivo seleccionado -->
+        <div id="device-info" class="info-panel" style="display: none;">
+            <h2>Información del Dispositivo</h2>
+            <div id="device-details" class="info-grid"></div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid" id="stats-grid" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-speed">--</div>
+                <div class="stat-label">Velocidad (km/h)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-altitude">--</div>
+                <div class="stat-label">Altitud (m)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-satellites">--</div>
+                <div class="stat-label">Satélites</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-records">--</div>
+                <div class="stat-label">Registros Totales</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
