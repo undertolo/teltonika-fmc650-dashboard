@@ -23,7 +23,7 @@ npm run setup        # Initialize/reset MySQL database schema
 ### Python TCP Server
 ```bash
 cd python_server
-python3 teltonika_server.py   # Start TCP listener (port 8000 by default)
+python3 teltonika_server.py   # Start TCP listener (port 9001 by default)
 ```
 
 ### Systemd Services (production)
@@ -57,7 +57,7 @@ systemctl enable --now teltonika-server teltonika-backend
 
 ### Data Flow
 ```
-Teltonika FMC650 device → TCP:8000 → python_server/teltonika_server.py
+Teltonika FMC650 device → TCP:9001 → python_server/teltonika_server.py
   → MySQL (teltonika DB)
   → HTTP:3001 → backend/server.js (Express REST API)
   → /frontend/public/js/app.js (polls every 30s)

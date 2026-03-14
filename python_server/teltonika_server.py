@@ -426,7 +426,7 @@ class TeltonikaServer:
     def handle_client(self, client_socket: socket.socket, client_address: tuple):
         imei = None
         try:
-            client_socket.settimeout(60.0)  # 60s timeout on all recv calls
+            client_socket.settimeout(300.0)  # 5min timeout on all recv calls
 
             # Step 1: receive IMEI
             imei_data = client_socket.recv(1024)
@@ -473,7 +473,7 @@ class TeltonikaServer:
                     logger.error(f"❌ No se pudo parsear paquete de {imei}")
 
         except socket.timeout:
-            logger.warning(f"⏱️  Timeout en handshake IMEI desde {client_address}")
+            logger.warning(f"⏱️  Timeout (5min) sin IMEI desde {client_address} — verificar config del dispositivo")
         except Exception as e:
             logger.error(f"Error con cliente {client_address} (IMEI: {imei}): {e}", exc_info=True)
         finally:
@@ -502,7 +502,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     HOST = '0.0.0.0'
-    PORT = 8000
+    PORT = int(os.getenv('TCP_PORT', 9001))
 
     DB_CONFIG = {
         'host': os.getenv('DB_HOST', 'localhost'),
