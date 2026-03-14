@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — FAHR Electronic Systems</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <style>
+    /* Full-height split layout */
+    html, body, .page { height: 100%; }
+    .page { display: flex; flex-direction: column; }
+    .dashboard-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Left sidebar */
+    .device-sidebar {
+      width: 310px;
+      min-width: 260px;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--tblr-border-color);
+      background: var(--tblr-bg-surface);
+      overflow: hidden;
+    }
+    .sidebar-header {
+      padding: .75rem 1rem;
+      border-bottom: 1px solid var(--tblr-border-color);
+      flex-shrink: 0;
+    }
+    .sidebar-header h3 { font-size: .875rem; font-weight: 600; margin: 0; }
+    .device-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .device-card {
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--tblr-border-color);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .device-card:hover  { background: var(--tblr-active-bg, rgba(32,107,196,.06)); }
+    .device-card.active { background: rgba(32,107,196,.12); border-left: 3px solid #206bc4; }
+    .device-card .truck-name { font-weight: 600; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .device-card .imei-text  { font-size: .72rem; font-family: monospace; color: var(--tblr-muted); }
+    .device-card .meta-row   { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; flex-wrap: wrap; }
+
+    /* Signal bars (same as devices-admin) */
+    .signal-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+    .signal-bar  { width: 3px; border-radius: 1px; background: var(--tblr-gray-300); }
+    .signal-bar.filled { background: var(--tblr-success); }
+    .signal-bar.filled.weak   { background: var(--tblr-danger); }
+    .signal-bar.filled.medium { background: var(--tblr-warning); }
+    .signal-bar:nth-child(1) { height: 25%; }
+    .signal-bar:nth-child(2) { height: 45%; }
+    .signal-bar:nth-child(3) { height: 65%; }
+    .signal-bar:nth-child(4) { height: 82%; }
+    .signal-bar:nth-child(5) { height: 100%; }
+
+    /* Map container */
+    .map-container { flex: 1; position: relative; }
+    #map { position: absolute; inset: 0; }
+
+    /* Device detail panel over map */
+    #detail-panel {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 280px;
+      z-index: 500;
+      display: none;
+    }
+
+    /* Status badges */
+    .badge-online  { background: rgba(47,179,68,.12);  color: #2fb344; }
+    .badge-offline { background: rgba(148,163,184,.12); color: #94a3b8; }
+    .badge-sleep   { background: rgba(245,159,0,.12);  color: #f59f00; }
+
+    /* Sidebar resize handle (optional feel) */
+    @media (max-width: 600px) {
+      .device-sidebar { width: 100%; max-width: 100%; position: absolute; z-index: 600; height: 40%; bottom: 0; border-right: none; border-top: 1px solid var(--tblr-border-color); }
+      .dashboard-body { flex-direction: column; }
+      .map-container  { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Top header ───────────────────────────────────────── -->
+  <header class="navbar navbar-expand-md navbar-light d-print-none">
+    <div class="container-xl">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <h1 class="navbar-brand navbar-brand-autodark pe-0 pe-md-3 mb-0">
+        <a href="/" class="d-flex align-items-center text-decoration-none">
+          <img src="img/logo-small.svg" class="hide-theme-dark" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <img src="img/logo-small-white.svg" class="hide-theme-light" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <span class="ms-2" style="font-size:1rem;font-weight:600">FAHR <span class="d-none d-lg-inline-block">Electronic Systems</span></span>
+        </a>
+      </h1>
+      <div class="navbar-nav flex-row order-md-last ms-auto align-items-center">
+        <!-- Live indicator -->
+        <div class="d-none d-md-flex me-3 align-items-center gap-2 text-muted" style="font-size:.75rem">
+          <span id="status-dot" class="status-dot bg-secondary"></span>
+          <span id="last-update-text">Cargando...</span>
+        </div>
+        <div class="d-none d-md-flex me-2 align-items-center">
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-dark" onclick="toggleDarkMode()" title="Modo oscuro">
+            <i class="icon ti ti-moon"></i>
+          </a>
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-light" onclick="toggleDarkMode()" title="Modo claro">
+            <i class="icon ti ti-brightness-up"></i>
+          </a>
+        </div>
+        <div class="nav-item dropdown">
+          <a href="javascript:void(0)" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown">
+            <span class="avatar avatar-sm" id="nav-avatar">U</span>
+            <div class="d-none d-sm-block ps-2">
+              <div id="nav-user-name" class="lh-1" style="font-size:.875rem;font-weight:500"></div>
+              <div id="nav-user-role" class="mt-1 small text-muted"></div>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a href="javascript:void(0)" class="dropdown-item d-md-none" onclick="toggleDarkMode()">
+              <i class="ti ti-moon me-2 hide-theme-dark"></i>
+              <i class="ti ti-brightness-up me-2 hide-theme-light"></i>Cambiar tema
+            </a>
+            <div class="dropdown-divider d-md-none"></div>
+            <a href="javascript:void(0)" class="dropdown-item text-danger" onclick="doLogout()">
+              <i class="ti ti-logout me-2"></i>Cerrar sesión
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Secondary menu ───────────────────────────────────── -->
+  <div class="navbar-expand-md">
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <div class="navbar navbar-light">
+        <div class="container-xl">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="customers.html">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-arrow-left"></i></span>
+                <span class="nav-link-title">Clientes</span>
+              </a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop"></i></span>
+                <span class="nav-link-title" id="nav-client-name">Monitor</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="nav-vehicles-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-truck"></i></span>
+                <span class="nav-link-title">Vehículos</span>
+              </a>
+            </li>
+          </ul>
+          <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-md-last" id="nav-settings-wrap" style="display:none">
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link" data-bs-toggle="dropdown">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-settings"></i></span>
+                  <span class="nav-link-title">Configuración</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                  <a href="vehicles.html" class="dropdown-item">
+                    <i class="ti ti-truck me-2"></i>Vehículos
+                  </a>
+                  <a href="devices-admin.html" class="dropdown-item">
+                    <i class="ti ti-router me-2"></i>Dispositivos
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dashboard body: sidebar + map ────────────────────── -->
+  <div class="dashboard-body">
+
+    <!-- Left sidebar -->
+    <div class="device-sidebar">
+      <div class="sidebar-header">
+        <div class="d-flex align-items-center justify-content-between">
+          <h3 id="sidebar-client-name">Cargando...</h3>
+          <span id="sidebar-count" class="badge bg-secondary-subtle text-secondary"></span>
+        </div>
+        <input type="search" id="sidebar-search" class="form-control form-control-sm mt-2"
+               placeholder="Buscar unidad o IMEI..." oninput="filterSidebar(this.value)">
+      </div>
+      <div class="device-list" id="device-list">
+        <div class="text-center text-muted py-4">
+          <div class="spinner-border spinner-border-sm me-2"></div>Cargando dispositivos...
+        </div>
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div class="map-container">
+      <div id="map"></div>
+
+      <!-- Device detail card (bottom-right over map) -->
+      <div id="detail-panel">
+        <div class="card shadow">
+          <div class="card-header py-2 d-flex align-items-center justify-content-between">
+            <div>
+              <div class="fw-bold" id="detail-name">—</div>
+              <div class="text-muted small font-monospace" id="detail-imei">—</div>
+            </div>
+            <button class="btn btn-sm btn-ghost-secondary" onclick="clearSelection()">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+          <div class="card-body p-2">
+            <div class="row g-2 text-center">
+              <div class="col-3">
+                <div class="fw-bold" id="detail-speed">—</div>
+                <div class="text-muted" style="font-size:.7rem">km/h</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold" id="detail-altitude">—</div>
+                <div class="text-muted" style="font-size:.7rem">m alt.</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold" id="detail-satellites">—</div>
+                <div class="text-muted" style="font-size:.7rem">sats.</div>
+              </div>
+              <div class="col-3">
+                <div class="fw-bold" id="detail-records">—</div>
+                <div class="text-muted" style="font-size:.7rem">reg.</div>
+              </div>
+            </div>
+            <div class="mt-2 text-muted small" id="detail-lastseen"></div>
+          </div>
+          <div class="card-footer py-2 d-flex gap-2">
+            <select class="form-select form-select-sm" id="route-hours" onchange="reloadRoute()">
+              <option value="6">Últimas 6h</option>
+              <option value="24" selected>Últimas 24h</option>
+              <option value="48">Últimas 48h</option>
+              <option value="168">Última semana</option>
+            </select>
+            <a id="detail-map-link" href="#" class="btn btn-sm btn-outline-primary text-nowrap">
+              <i class="ti ti-external-link me-1"></i>Ver
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.dashboard-body -->
+
+</div><!-- /.page -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+  const API       = window.location.origin + BASE_PATH;
+  const params    = new URLSearchParams(window.location.search);
+  const CLIENT_ID = params.get('client_id');
+
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!token || !user) window.location.replace(BASE_PATH + '/login.html');
+  if (!CLIENT_ID)      window.location.replace(BASE_PATH + '/customers.html');
+
+  // Dark mode
+  (function() {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
+      document.body.classList.add('dark');
+    }
+  })();
+  function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    document.documentElement.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+    document.body.classList.toggle('dark', !isDark);
+    localStorage.setItem('darkMode', (!isDark).toString());
+  }
+  function doLogout() {
+    localStorage.removeItem('token'); localStorage.removeItem('user');
+    window.location.replace(BASE_PATH + '/login.html');
+  }
+
+  // Nav links
+  document.getElementById('nav-vehicles-link').href = BASE_PATH + '/vehicles.html';
+  if (user && (user.role === 'admin' || user.role === 'superuser')) {
+    document.getElementById('nav-settings-wrap').style.display = '';
+  }
+
+  // User info
+  const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
+  if (user) {
+    const color = roleColors[user.role] || '#206bc4';
+    document.getElementById('nav-avatar').textContent = (user.name || user.username || '?')[0].toUpperCase();
+    document.getElementById('nav-avatar').style.background = color;
+    document.getElementById('nav-user-name').textContent = user.name || user.username;
+    document.getElementById('nav-user-role').textContent = user.role;
+  }
+
+  function authHdr() { return { Authorization: `Bearer ${token}` }; }
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ── State ─────────────────────────────────────────────────
+  let map, routePolyline;
+  const markers = {};
+  let allDevices    = [];
+  let selectedImei  = null;
+  const ONLINE_MS   = 5 * 60 * 1000;
+
+  function isOnline(last_seen) {
+    return last_seen && (Date.now() - new Date(last_seen).getTime()) < ONLINE_MS;
+  }
+
+  function formatDate(dt) {
+    if (!dt) return '—';
+    const d = new Date(dt), diff = Date.now() - d;
+    if (diff < 60000)    return 'Hace ' + Math.floor(diff/1000) + 's';
+    if (diff < 3600000)  return 'Hace ' + Math.floor(diff/60000) + 'm';
+    if (diff < 86400000) return 'Hace ' + Math.floor(diff/3600000) + 'h';
+    return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+  }
+
+  function signalBars(level) {
+    if (level === null || level === undefined) return '';
+    const n = parseInt(level);
+    const cls = n <= 1 ? 'weak' : n <= 3 ? 'medium' : '';
+    let bars = '';
+    for (let i = 1; i <= 5; i++) bars += `<span class="signal-bar${i <= n ? ' filled ' + cls : ''}"></span>`;
+    return `<div class="signal-bars" title="Señal ${n}/5">${bars}</div>`;
+  }
+
+  // ── Map ───────────────────────────────────────────────────
+  function initMap() {
+    map = L.map('map').setView([23.6345, -102.5528], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(map);
+  }
+
+  function deviceIcon(online, selected) {
+    const color = selected ? '#d63939' : online ? '#2fb344' : '#94a3b8';
+    const size  = selected ? 18 : 14;
+    return L.divIcon({
+      html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.5)"></div>`,
+      className: '', iconSize: [size, size],
+      iconAnchor: [size/2, size/2], popupAnchor: [0, -(size/2) - 4]
+    });
+  }
+
+  function markerPopup(d, pos) {
+    const online = isOnline(d.last_seen);
+    const statusColor = online ? '#2fb344' : '#94a3b8';
+    const truckLabel = d.truck_name ? `<b>${escHtml(d.truck_name)}</b>${d.truck_plate ? ' — ' + escHtml(d.truck_plate) : ''}<br>` : '';
+    return `${truckLabel}
+      <span class="font-monospace" style="font-size:.8em">${escHtml(d.imei)}</span><br>
+      <span style="color:${statusColor}">● ${online ? 'En línea' : 'Sin conexión'}</span><br>
+      ${pos ? `Velocidad: ${pos.speed||0} km/h<br>Altitud: ${pos.altitude||0} m<br>Satélites: ${pos.satellites||0}<br>` : ''}
+      ${formatDate(d.last_seen)}`;
+  }
+
+  function updateMarkers() {
+    const activeImeis = new Set(allDevices.map(d => d.imei));
+    Object.keys(markers).forEach(imei => {
+      if (!activeImeis.has(imei)) { map.removeLayer(markers[imei]); delete markers[imei]; }
+    });
+
+    let positioned = 0;
+    allDevices.forEach(d => {
+      if (!d.last_lat || !d.last_lng) return;
+      const online   = isOnline(d.last_seen);
+      const selected = d.imei === selectedImei;
+      if (markers[d.imei]) {
+        markers[d.imei].setLatLng([d.last_lat, d.last_lng]);
+        markers[d.imei].setIcon(deviceIcon(online, selected));
+        markers[d.imei].setPopupContent(markerPopup(d, null));
+      } else {
+        const m = L.marker([d.last_lat, d.last_lng], { icon: deviceIcon(online, selected) }).addTo(map);
+        m.bindPopup(markerPopup(d, null));
+        m.on('click', () => selectDevice(d.imei));
+        markers[d.imei] = m;
+      }
+      positioned++;
+    });
+
+    // Fit map to all markers if nothing selected
+    if (!selectedImei && positioned > 0) {
+      const group = L.featureGroup(Object.values(markers));
+      map.fitBounds(group.getBounds().pad(0.2));
+    }
+  }
+
+  // ── Sidebar ───────────────────────────────────────────────
+  function renderSidebar(devices) {
+    const list = document.getElementById('device-list');
+    document.getElementById('sidebar-count').textContent = devices.length + ' disp.';
+
+    if (!devices.length) {
+      list.innerHTML = `<div class="text-center text-muted py-4">
+        <i class="ti ti-device-off" style="font-size:2rem"></i>
+        <p class="mt-2">No hay dispositivos asignados a este cliente</p></div>`;
+      return;
+    }
+
+    list.innerHTML = devices.map(d => {
+      const online  = isOnline(d.last_seen);
+      const active  = d.imei === selectedImei ? ' active' : '';
+      const badge   = online
+        ? `<span class="badge badge-online badge-sm"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`
+        : `<span class="badge badge-offline badge-sm"><span class="status-dot bg-secondary me-1"></span>Sin conexión</span>`;
+
+      return `<div class="device-card${active}" onclick="selectDevice('${escHtml(d.imei)}')">
+        <div class="d-flex align-items-start justify-content-between gap-1">
+          <div style="min-width:0">
+            <div class="truck-name">${escHtml(d.truck_name || 'Sin unidad asignada')}</div>
+            <div class="imei-text">${escHtml(d.imei)}</div>
+          </div>
+          ${badge}
+        </div>
+        <div class="meta-row">
+          ${d.signal_level !== null && d.signal_level !== undefined ? signalBars(d.signal_level) : ''}
+          ${d.last_speed !== null && d.last_speed !== undefined ? `<span class="text-muted" style="font-size:.72rem"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</span>` : ''}
+          <span class="text-muted ms-auto" style="font-size:.7rem">${formatDate(d.last_seen)}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function filterSidebar(q) {
+    if (!q.trim()) { renderSidebar(allDevices); return; }
+    const lower = q.toLowerCase();
+    renderSidebar(allDevices.filter(d =>
+      (d.imei       || '').toLowerCase().includes(lower) ||
+      (d.truck_name || '').toLowerCase().includes(lower) ||
+      (d.truck_plate|| '').toLowerCase().includes(lower)
+    ));
+  }
+
+  // ── Device selection ──────────────────────────────────────
+  async function selectDevice(imei) {
+    selectedImei = imei;
+    renderSidebar(allDevices); // re-render to show active state
+
+    // Update marker icons
+    allDevices.forEach(d => {
+      if (markers[d.imei]) {
+        markers[d.imei].setIcon(deviceIcon(isOnline(d.last_seen), d.imei === imei));
+      }
+    });
+
+    // Center on marker and open popup
+    if (markers[imei]) {
+      map.setView(markers[imei].getLatLng(), 14);
+      markers[imei].openPopup();
+    }
+
+    // Show detail panel
+    const device = allDevices.find(d => d.imei === imei);
+    if (device) {
+      document.getElementById('detail-name').textContent    = device.truck_name || 'Sin unidad';
+      document.getElementById('detail-imei').textContent    = device.imei;
+      document.getElementById('detail-speed').textContent   = device.last_speed ?? '—';
+      document.getElementById('detail-records').textContent = (device.total_records||0).toLocaleString();
+      document.getElementById('detail-lastseen').textContent = formatDate(device.last_seen);
+      document.getElementById('detail-map-link').href = BASE_PATH + '/?imei=' + encodeURIComponent(imei);
+      document.getElementById('detail-panel').style.display = '';
+    }
+
+    // Load live position + stats + route
+    await loadDeviceDetail(imei);
+  }
+
+  async function loadDeviceDetail(imei) {
+    try {
+      const [posRes, statsRes] = await Promise.all([
+        fetch(`${API}/api/device/${encodeURIComponent(imei)}/latest`, { headers: authHdr() }),
+        fetch(`${API}/api/device/${encodeURIComponent(imei)}/stats`,  { headers: authHdr() })
+      ]);
+      const [posData, statsData] = await Promise.all([posRes.json(), statsRes.json()]);
+
+      if (posData.success && posData.position) {
+        const p = posData.position;
+        document.getElementById('detail-speed').textContent     = p.speed ?? '—';
+        document.getElementById('detail-altitude').textContent  = p.altitude ?? '—';
+        document.getElementById('detail-satellites').textContent = p.satellites ?? '—';
+        // Update marker popup with live data
+        if (markers[imei]) {
+          const device = allDevices.find(d => d.imei === imei);
+          markers[imei].setLatLng([p.latitude, p.longitude]);
+          if (device) markers[imei].setPopupContent(markerPopup(device, p));
+        }
+      }
+      if (statsData.success && statsData.stats) {
+        document.getElementById('detail-records').textContent = (statsData.stats.total_records||0).toLocaleString();
+      }
+
+      await loadRoute(imei);
+    } catch(e) { console.warn('Error loading device detail', e); }
+  }
+
+  async function loadRoute(imei) {
+    const hours = document.getElementById('route-hours').value;
+    try {
+      const res  = await fetch(`${API}/api/device/${encodeURIComponent(imei)}/route?hours=${hours}&limit=500`, { headers: authHdr() });
+      const data = await res.json();
+      if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+      if (data.success && data.route.length > 0) {
+        const coords = data.route.slice().reverse().map(p => [p.latitude, p.longitude]);
+        routePolyline = L.polyline(coords, { color: '#206bc4', weight: 3, opacity: .7 }).addTo(map);
+      }
+    } catch(e) {}
+  }
+
+  async function reloadRoute() {
+    if (selectedImei) await loadRoute(selectedImei);
+  }
+
+  function clearSelection() {
+    selectedImei = null;
+    if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+    document.getElementById('detail-panel').style.display = 'none';
+    allDevices.forEach(d => {
+      if (markers[d.imei]) markers[d.imei].setIcon(deviceIcon(isOnline(d.last_seen), false));
+    });
+    renderSidebar(allDevices);
+    // Fit back to all markers
+    const ml = Object.values(markers);
+    if (ml.length) map.fitBounds(L.featureGroup(ml).getBounds().pad(0.2));
+  }
+
+  // ── Data loading ──────────────────────────────────────────
+  async function loadData(initial = false) {
+    try {
+      // Load all admin devices and filter by client_id
+      const res  = await fetch(`${API}/api/devices/admin`, { headers: authHdr() });
+      if (res.status === 401) { doLogout(); return; }
+      const data = await res.json();
+      if (!data.success) return;
+
+      allDevices = data.devices.filter(d => String(d.client_id) === String(CLIENT_ID));
+
+      renderSidebar(allDevices);
+      updateMarkers();
+      setStatus(true);
+
+      // If a device was selected, refresh its route too
+      if (selectedImei) await loadDeviceDetail(selectedImei);
+
+    } catch(e) {
+      setStatus(false);
+      if (initial) {
+        document.getElementById('device-list').innerHTML =
+          `<div class="text-center text-danger py-4"><i class="ti ti-alert-triangle"></i> Error de conexión</div>`;
+      }
+    }
+  }
+
+  async function loadClientName() {
+    try {
+      const res  = await fetch(`${API}/api/clients`, { headers: authHdr() });
+      const data = await res.json();
+      if (data.success) {
+        const client = data.clients.find(c => String(c.id) === String(CLIENT_ID));
+        if (client) {
+          const name = client.name || client.business_name || 'Cliente';
+          document.title = name + ' — FAHR Electronic Systems';
+          document.getElementById('sidebar-client-name').textContent = name;
+          document.getElementById('nav-client-name').textContent     = name;
+        }
+      }
+    } catch(e) {}
+  }
+
+  function setStatus(online) {
+    const dot  = document.getElementById('status-dot');
+    const text = document.getElementById('last-update-text');
+    dot.className  = 'status-dot ' + (online ? 'bg-success' : 'bg-danger');
+    text.textContent = online ? 'Actualizado ' + new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : 'Sin conexión';
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  initMap();
+  loadClientName();
+  loadData(true);
+  setInterval(() => loadData(false), 30000);
+</script>
+</body>
+</html>
