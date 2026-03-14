@@ -525,39 +525,40 @@
 
   // ── Assign modal ──────────────────────────────────────────
   let assignImei    = null;
+  let assignTruckId = null;
   let allClients    = [];
   let assignModal   = null;
 
   function openAssignModal(device) {
-    assignImei = device.imei;
+    assignImei    = device.imei;
+    assignTruckId = device.truck_id || null;
+
     document.getElementById('assign-imei-display').textContent = device.imei;
     document.getElementById('assign-error').style.display = 'none';
     document.getElementById('assign-truck-wrap').style.display = 'none';
     document.getElementById('assign-remove-btn').style.display = device.truck_id ? '' : 'none';
 
     // Reset selects
-    const clientSel = document.getElementById('assign-client-select');
-    clientSel.innerHTML = '<option value="">— Seleccionar cliente —</option>';
-    document.getElementById('assign-truck-select').innerHTML = '<option value="">— Seleccionar unidad —</option>';
-
-    // Load clients if not loaded yet
-    loadClients(device.client_id);
+    document.getElementById('assign-client-select').innerHTML = '<option value="">Cargando clientes...</option>';
+    document.getElementById('assign-truck-select').innerHTML  = '<option value="">— Seleccionar unidad —</option>';
 
     if (!assignModal) assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
     assignModal.show();
+
+    loadClients(device.client_id);
   }
 
   async function loadClients(preselectedClientId) {
     const sel = document.getElementById('assign-client-select');
     try {
-      const res = await fetch(`${API}/api/clients`, { headers: { Authorization: `Bearer ${token}` } });
+      const res  = await fetch(`${API}/api/clients`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) {
         allClients = data.clients;
         sel.innerHTML = '<option value="">— Seleccionar cliente —</option>' +
           allClients.map(c => `<option value="${c.id}"${c.id == preselectedClientId ? ' selected' : ''}>${escHtml(c.name || c.business_name || 'Cliente ' + c.id)}</option>`).join('');
         if (preselectedClientId) {
-          onClientChange(preselectedClientId);
+          await loadTrucksForClient(preselectedClientId, assignTruckId);
         }
       }
     } catch(e) {
@@ -565,16 +566,21 @@
     }
   }
 
-  async function onClientChange(preselectedClientId) {
+  async function onClientChange() {
     const clientId = document.getElementById('assign-client-select').value;
+    if (!clientId) {
+      document.getElementById('assign-truck-wrap').style.display = 'none';
+      return;
+    }
+    // When user manually picks a different client, don't preselect any truck
+    await loadTrucksForClient(clientId, null);
+  }
+
+  async function loadTrucksForClient(clientId, preselectedTruckId) {
     const truckWrap = document.getElementById('assign-truck-wrap');
     const truckSel  = document.getElementById('assign-truck-select');
 
-    if (!clientId) {
-      truckWrap.style.display = 'none';
-      return;
-    }
-    truckSel.innerHTML = '<option value="">Cargando...</option>';
+    truckSel.innerHTML = '<option value="">Cargando unidades...</option>';
     truckWrap.style.display = '';
 
     try {
@@ -582,10 +588,15 @@
       const data = await res.json();
       if (data.success) {
         if (!data.trucks.length) {
-          truckSel.innerHTML = '<option value="">No hay unidades para este cliente</option>';
+          truckSel.innerHTML = '<option value="">Este cliente no tiene unidades registradas</option>';
         } else {
           truckSel.innerHTML = '<option value="">— Seleccionar unidad —</option>' +
-            data.trucks.map(t => `<option value="${t.id}">${escHtml(t.name)}${t.plate ? ' — ' + escHtml(t.plate) : ''}</option>`).join('');
+            data.trucks.map(t => {
+              const parts = [t.brand, t.model, t.year].filter(Boolean).join(' ');
+              const detail = parts ? ` · ${parts}` : '';
+              const plate  = t.plate ? ` [${escHtml(t.plate)}]` : '';
+              return `<option value="${t.id}"${t.id == preselectedTruckId ? ' selected' : ''}>${escHtml(t.name)}${detail}${plate}</option>`;
+            }).join('');
         }
       }
     } catch(e) {
