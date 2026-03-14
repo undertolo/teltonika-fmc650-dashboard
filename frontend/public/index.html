@@ -14,6 +14,7 @@
             <span id="server-status" class="status-badge">●</span>
             <span id="last-update">Actualizando...</span>
             <span id="user-info" class="user-info"></span>
+            <button id="users-btn" class="users-btn" onclick="app.openUserPanel()" title="Manage Users" style="display:none">👥 Users</button>
             <button class="dark-mode-btn" onclick="app.toggleDarkMode()" title="Toggle dark mode">🌙</button>
             <button class="logout-btn" onclick="app.logout()" title="Logout">⏻</button>
         </div>
@@ -69,6 +70,56 @@
             <div class="stat-card">
                 <div class="stat-value" id="stat-records">--</div>
                 <div class="stat-label">Registros Totales</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Modal -->
+    <div id="users-modal" class="modal-overlay" style="display:none" onclick="app.closeUserPanel(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>User Management</h2>
+                <button class="modal-close" onclick="app.closeUserPanel()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="users-table-container"></div>
+                <div id="user-form-container" style="display:none">
+                    <h3 id="user-form-title">Add User</h3>
+                    <form id="user-form" onsubmit="app.submitUserForm(event)">
+                        <input type="hidden" id="edit-user-id">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" id="form-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" id="form-name">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Role</label>
+                                <select id="form-role" required>
+                                    <option value="driver">Driver</option>
+                                    <option value="owner">Owner</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="superuser">Superuser</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label id="form-password-label">Password</label>
+                                <input type="password" id="form-password" placeholder="Leave blank to keep current">
+                            </div>
+                        </div>
+                        <div id="user-form-error" class="form-error" style="display:none"></div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" id="user-form-submit">Save</button>
+                            <button type="button" class="btn-secondary" onclick="app.hideUserForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                <button class="btn-primary" onclick="app.showAddUserForm()" id="add-user-btn">+ Add User</button>
             </div>
         </div>
     </div>

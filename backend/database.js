@@ -208,6 +208,37 @@ const db = {
     return rows[0];
   },
 
+  // User management
+  async getUsers() {
+    const [rows] = await pool.query(
+      'SELECT id, username, role, name, created_at FROM users ORDER BY id'
+    );
+    return rows;
+  },
+
+  async createUser(username, passwordHash, role, name) {
+    const [result] = await pool.query(
+      'INSERT INTO users (username, password_hash, role, name) VALUES (?, ?, ?, ?)',
+      [username, passwordHash, role, name]
+    );
+    return result.insertId;
+  },
+
+  async updateUser(id, fields) {
+    const sets = [];
+    const values = [];
+    if (fields.name !== undefined)          { sets.push('name = ?');          values.push(fields.name); }
+    if (fields.role !== undefined)          { sets.push('role = ?');          values.push(fields.role); }
+    if (fields.password_hash !== undefined) { sets.push('password_hash = ?'); values.push(fields.password_hash); }
+    if (sets.length === 0) return;
+    values.push(id);
+    await pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`, values);
+  },
+
+  async deleteUser(id) {
+    await pool.query('DELETE FROM users WHERE id = ?', [id]);
+  },
+
   // Health check
   async healthCheck() {
     try {

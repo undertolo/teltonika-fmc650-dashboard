@@ -4,6 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const { testConnection, createTables, db } = require('./database');
 const { login, requireAuth, requireRole } = require('./auth');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const app = express();
@@ -117,6 +118,64 @@ app.get('/api/device/:imei/stats', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);
     res.status(500).json({ success: false, error: 'Error obteniendo estadísticas' });
+  }
+});
+
+// ==================== RUTAS DE USUARIOS ====================
+
+// GET /api/users
+app.get('/api/users', requireAuth, requireRole('superuser'), async (req, res) => {
+  try {
+    const users = await db.getUsers();
+    res.json({ success: true, users });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error fetching users' });
+  }
+});
+
+// POST /api/users
+app.post('/api/users', requireAuth, requireRole('superuser'), async (req, res) => {
+  try {
+    const { username, password, role, name } = req.body;
+    if (!username || !password || !role) {
+      return res.status(400).json({ success: false, error: 'username, password and role are required' });
+    }
+    const hash = await bcrypt.hash(password, 10);
+    const id = await db.createUser(username, hash, role, name || username);
+    res.json({ success: true, id });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ success: false, error: 'Username already exists' });
+    }
+    res.status(500).json({ success: false, error: 'Error creating user' });
+  }
+});
+
+// PUT /api/users/:id
+app.put('/api/users/:id', requireAuth, requireRole('superuser'), async (req, res) => {
+  try {
+    const { name, role, password } = req.body;
+    const fields = {};
+    if (name)     fields.name = name;
+    if (role)     fields.role = role;
+    if (password) fields.password_hash = await bcrypt.hash(password, 10);
+    await db.updateUser(req.params.id, fields);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error updating user' });
+  }
+});
+
+// DELETE /api/users/:id
+app.delete('/api/users/:id', requireAuth, requireRole('superuser'), async (req, res) => {
+  try {
+    if (parseInt(req.params.id) === req.user.id) {
+      return res.status(400).json({ success: false, error: 'Cannot delete your own account' });
+    }
+    await db.deleteUser(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error deleting user' });
   }
 });
 

@@ -43,6 +43,9 @@ const app = {
       <span class="user-name">${this.user.name || this.user.username}</span>
       <span class="role-badge" style="background:${color}">${this.user.role}</span>
     `;
+    if (this.user.role === 'superuser') {
+      document.getElementById('users-btn').style.display = 'inline-flex';
+    }
   },
 
   authHeaders() {
@@ -434,6 +437,145 @@ const app = {
     }, 30000);
 
     console.log('🔄 Auto-refresh iniciado (30s)');
+  },
+
+  // ==================== USER MANAGEMENT ====================
+
+  async openUserPanel() {
+    document.getElementById('users-modal').style.display = 'flex';
+    this.hideUserForm();
+    await this.loadUsers();
+  },
+
+  closeUserPanel(event) {
+    if (event && event.target !== document.getElementById('users-modal')) return;
+    document.getElementById('users-modal').style.display = 'none';
+  },
+
+  async loadUsers() {
+    const container = document.getElementById('users-table-container');
+    container.innerHTML = '<div class="loading">Loading users</div>';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users`, { headers: this.authHeaders() });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      this.renderUsersTable(data.users);
+    } catch (e) {
+      container.innerHTML = `<div class="error">${e.message}</div>`;
+    }
+  },
+
+  renderUsersTable(users) {
+    const roleColors = { superuser: '#9b59b6', admin: '#e74c3c', owner: '#e67e22', driver: '#2ecc71' };
+    const rows = users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td><strong>${u.username}</strong></td>
+        <td>${u.name || '—'}</td>
+        <td><span class="role-badge" style="background:${roleColors[u.role]}">${u.role}</span></td>
+        <td>${new Date(u.created_at).toLocaleDateString()}</td>
+        <td class="table-actions">
+          <button class="btn-sm btn-edit" onclick="app.showEditUserForm(${u.id},'${u.username}','${u.name || ''}','${u.role}')">Edit</button>
+          ${u.id !== this.user.id ? `<button class="btn-sm btn-delete" onclick="app.deleteUser(${u.id},'${u.username}')">Delete</button>` : '<span class="you-label">you</span>'}
+        </td>
+      </tr>
+    `).join('');
+
+    document.getElementById('users-table-container').innerHTML = `
+      <table class="users-table">
+        <thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  },
+
+  showAddUserForm() {
+    document.getElementById('user-form-title').textContent = 'Add User';
+    document.getElementById('edit-user-id').value = '';
+    document.getElementById('form-username').value = '';
+    document.getElementById('form-username').disabled = false;
+    document.getElementById('form-name').value = '';
+    document.getElementById('form-role').value = 'driver';
+    document.getElementById('form-password').value = '';
+    document.getElementById('form-password').required = true;
+    document.getElementById('form-password-label').textContent = 'Password';
+    document.getElementById('user-form-error').style.display = 'none';
+    document.getElementById('user-form-container').style.display = 'block';
+    document.getElementById('add-user-btn').style.display = 'none';
+    document.getElementById('form-username').focus();
+  },
+
+  showEditUserForm(id, username, name, role) {
+    document.getElementById('user-form-title').textContent = 'Edit User';
+    document.getElementById('edit-user-id').value = id;
+    document.getElementById('form-username').value = username;
+    document.getElementById('form-username').disabled = true;
+    document.getElementById('form-name').value = name;
+    document.getElementById('form-role').value = role;
+    document.getElementById('form-password').value = '';
+    document.getElementById('form-password').required = false;
+    document.getElementById('form-password-label').textContent = 'New Password (optional)';
+    document.getElementById('user-form-error').style.display = 'none';
+    document.getElementById('user-form-container').style.display = 'block';
+    document.getElementById('add-user-btn').style.display = 'none';
+    document.getElementById('form-name').focus();
+  },
+
+  hideUserForm() {
+    document.getElementById('user-form-container').style.display = 'none';
+    document.getElementById('add-user-btn').style.display = 'inline-block';
+  },
+
+  async submitUserForm(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-user-id').value;
+    const isEdit = !!id;
+    const errorEl = document.getElementById('user-form-error');
+    const submitBtn = document.getElementById('user-form-submit');
+
+    const body = {
+      name:     document.getElementById('form-name').value.trim(),
+      role:     document.getElementById('form-role').value,
+      password: document.getElementById('form-password').value,
+    };
+    if (!isEdit) body.username = document.getElementById('form-username').value.trim();
+    if (isEdit && !body.password) delete body.password;
+
+    submitBtn.disabled = true;
+    errorEl.style.display = 'none';
+
+    try {
+      const url = isEdit ? `${API_BASE_URL}/api/users/${id}` : `${API_BASE_URL}/api/users`;
+      const res = await fetch(url, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { ...this.authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      this.hideUserForm();
+      await this.loadUsers();
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  },
+
+  async deleteUser(id, username) {
+    if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+        method: 'DELETE',
+        headers: this.authHeaders()
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      await this.loadUsers();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   },
 
   // Reset map to show all devices
