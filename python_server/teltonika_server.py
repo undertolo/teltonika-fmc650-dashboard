@@ -7,6 +7,7 @@ Guarda datos en MySQL para ser consumidos por backend Node.js
 import socket
 import struct
 import logging
+import sys
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 import threading
@@ -22,15 +23,14 @@ except ImportError:
     print("⚠️  mysql-connector-python no está instalado")
 
 # Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s - %(message)s',
+    stream=sys.stdout
+)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.propagate = False
-
-_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-_file_handler = logging.FileHandler('teltonika_server.log')
-_file_handler.setFormatter(_formatter)
-logger.addHandler(_file_handler)
+logging.getLogger('mysql').setLevel(logging.WARNING)
+logging.getLogger('mysql.connector').setLevel(logging.WARNING)
 
 
 class DatabaseManager:
