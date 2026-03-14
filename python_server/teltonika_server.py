@@ -22,15 +22,15 @@ except ImportError:
     print("⚠️  mysql-connector-python no está instalado")
 
 # Configuración de logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('teltonika_server.log'),
-        logging.StreamHandler()
-    ]
-)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.propagate = False
+
+_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+_file_handler = logging.FileHandler('teltonika_server.log')
+_file_handler.setFormatter(_formatter)
+logger.addHandler(_file_handler)
 
 
 class DatabaseManager:
