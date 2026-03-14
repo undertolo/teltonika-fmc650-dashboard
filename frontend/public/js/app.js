@@ -13,25 +13,29 @@ const app = {
   autoRefreshInterval: null,
   user: null,
   clientId: null,
-  clientImeis: null, // Set of IMEIs if filtered by client
+  truckId: null,
+  clientImeis: null, // Set of IMEIs if filtered by client or truck
 
   // Inicialización
   async init() {
     if (!this.initAuth()) return;
     this.initDarkMode();
 
-    // Read client_id from URL
+    // Read client_id / truck_id from URL
     const params = new URLSearchParams(window.location.search);
     this.clientId = params.get('client_id') || null;
+    this.truckId = params.get('truck_id') || null;
 
-    // admin/superuser without client filter → redirect to customer list
-    if (!this.clientId && (this.user.role === 'admin' || this.user.role === 'superuser')) {
+    // admin/superuser without any filter → redirect to customer list
+    if (!this.clientId && !this.truckId && (this.user.role === 'admin' || this.user.role === 'superuser')) {
       window.location.replace(BASE_PATH + '/customers.html');
       return;
     }
 
-    // If filtering by client, load allowed IMEIs first
-    if (this.clientId) {
+    // Load IMEI filter
+    if (this.truckId) {
+      await this.loadTruckFilter();
+    } else if (this.clientId) {
       await this.loadClientFilter();
     }
 
@@ -68,6 +72,38 @@ const app = {
     }
   },
 
+  // Load IMEIs for a specific truck
+  async loadTruckFilter() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/trucks/${this.truckId}`, {
+        headers: this.authHeaders()
+      });
+      if (res.status === 401) { this.handleUnauthorized(); return; }
+      const data = await res.json();
+      if (data.success && data.truck) {
+        const imeis = (data.truck.devices || []).map(d => d.imei);
+        this.clientImeis = imeis.length > 0 ? new Set(imeis) : null;
+        const clientId = data.truck.client_id;
+        this.showBackToTrucks(clientId);
+      }
+    } catch (e) {
+      console.error('Error loading truck filter:', e);
+    }
+  },
+
+  showBackToTrucks(clientId) {
+    const headerInfo = document.querySelector('.header-info');
+    if (!headerInfo || document.getElementById('back-btn')) return;
+    const btn = document.createElement('a');
+    btn.id = 'back-btn';
+    btn.href = BASE_PATH + '/trucks.html?client_id=' + clientId;
+    btn.className = 'logout-btn';
+    btn.title = 'Back to Trucks';
+    btn.style.textDecoration = 'none';
+    btn.textContent = '← Trucks';
+    headerInfo.insertBefore(btn, headerInfo.firstChild);
+  },
+
   showBackToCustomers() {
     const headerInfo = document.querySelector('.header-info');
     if (!headerInfo) return;
@@ -75,11 +111,11 @@ const app = {
     if (existing) return;
     const btn = document.createElement('a');
     btn.id = 'back-btn';
-    btn.href = BASE_PATH + '/customers.html';
+    btn.href = BASE_PATH + '/trucks.html?client_id=' + this.clientId;
     btn.className = 'logout-btn';
-    btn.title = 'Back to Customers';
+    btn.title = 'Back to Trucks';
     btn.style.textDecoration = 'none';
-    btn.textContent = '← Customers';
+    btn.textContent = '← Trucks';
     headerInfo.insertBefore(btn, headerInfo.firstChild);
   },
 

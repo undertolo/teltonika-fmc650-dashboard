@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trucks — Fleet Management</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body { background: var(--bg-color); }
+    .page-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .navbar {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 1.5rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .navbar-brand { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; color: var(--text-color); text-decoration: none; }
+    .navbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .user-badge { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-light); }
+    .role-pill { padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+    .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 1rem; padding: 0.35rem; border-radius: var(--radius); transition: background 0.15s; }
+    .btn-icon:hover { background: var(--bg-color); color: var(--text-color); }
+
+    .page-header { background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .page-header-left { display: flex; align-items: center; gap: 0.75rem; }
+    .back-link { color: var(--text-light); text-decoration: none; font-size: 0.875rem; display: flex; align-items: center; gap: 0.3rem; }
+    .back-link:hover { color: var(--text-color); }
+    .page-header-title { font-size: 1.25rem; font-weight: 600; color: var(--text-color); margin: 0 0 0.15rem; }
+    .page-header-subtitle { font-size: 0.875rem; color: var(--text-light); margin: 0; }
+
+    .page-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .card-title { font-size: 0.875rem; font-weight: 600; color: var(--text-color); margin: 0; }
+
+    .btn-primary { padding: 0.4rem 1rem; background: #206bc4; color: #fff; border: none; border-radius: var(--radius); font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+    .btn-primary:hover { background: #1d60b0; }
+    .btn-sm { padding: 0.25rem 0.6rem; font-size: 0.75rem; border-radius: var(--radius); border: none; cursor: pointer; font-weight: 500; transition: background 0.15s; }
+    .btn-edit { background: rgba(32,107,196,0.1); color: #206bc4; }
+    .btn-edit:hover { background: rgba(32,107,196,0.2); }
+    .btn-danger { background: rgba(214,57,57,0.1); color: #d63939; }
+    .btn-danger:hover { background: rgba(214,57,57,0.2); }
+    .btn-view { background: #206bc4; color: #fff; }
+    .btn-view:hover { background: #1d60b0; }
+    .btn-secondary { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 0.4rem 1rem; border-radius: var(--radius); font-size: 0.8rem; cursor: pointer; }
+
+    /* Trucks grid */
+    .trucks-grid { padding: 1.25rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .truck-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; transition: border-color 0.15s, box-shadow 0.15s; }
+    .truck-card:hover { border-color: #206bc4; box-shadow: 0 2px 8px rgba(32,107,196,0.1); }
+    .truck-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .truck-icon { font-size: 1.5rem; }
+    .truck-name { font-weight: 600; font-size: 0.9rem; color: var(--text-color); }
+    .truck-plate { font-size: 0.75rem; color: var(--text-light); margin-top: 0.1rem; }
+    .truck-actions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .truck-devices { margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem; }
+    .truck-devices-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-light); margin-bottom: 0.5rem; }
+    .device-chip { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 100px; padding: 0.15rem 0.5rem; font-size: 0.75rem; color: var(--text-color); margin: 0.15rem; }
+    .device-chip .remove-device { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 0.8rem; padding: 0; line-height: 1; }
+    .device-chip .remove-device:hover { color: #d63939; }
+    .online-dot { width: 6px; height: 6px; border-radius: 50%; background: #2fb344; flex-shrink: 0; }
+    .offline-dot { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; flex-shrink: 0; }
+    .truck-footer { margin-top: 0.75rem; display: flex; gap: 0.5rem; align-items: center; }
+    .no-devices { font-size: 0.8rem; color: var(--text-light); font-style: italic; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
+    .modal { background: var(--card-bg); border-radius: var(--radius); width: 100%; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 1rem; font-weight: 600; color: var(--text-color); margin: 0; }
+    .modal-close { background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--text-light); padding: 0.25rem; }
+    .modal-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.04em; }
+    .form-group input, .form-group select, .form-group textarea { padding: 0.4rem 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-color); color: var(--text-color); outline: none; }
+    .form-group input:focus, .form-group select:focus { border-color: #90b5e2; box-shadow: 0 0 0 0.2rem rgba(32,107,196,0.2); }
+    .form-error { color: #d63939; font-size: 0.8rem; }
+    .modal-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+    /* Assign device modal */
+    .device-select-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius); }
+    .device-select-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border-color); font-size: 0.875rem; transition: background 0.1s; }
+    .device-select-item:last-child { border-bottom: none; }
+    .device-select-item:hover { background: rgba(32,107,196,0.05); }
+    .device-select-item input[type=checkbox] { accent-color: #206bc4; }
+
+    .empty-state { padding: 2.5rem 1.5rem; text-align: center; color: var(--text-light); }
+    .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .empty-state-text { font-size: 0.875rem; }
+
+    .search-input { padding: 0.35rem 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-color); color: var(--text-color); width: 200px; outline: none; }
+    .search-input:focus { border-color: #90b5e2; box-shadow: 0 0 0 0.2rem rgba(32,107,196,0.2); }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="#" class="navbar-brand">📡 Fleet Management</a>
+    <div class="navbar-actions">
+      <div class="user-badge">
+        <span id="nav-user-name"></span>
+        <span id="nav-role-pill" class="role-pill"></span>
+      </div>
+      <button class="btn-icon" onclick="toggleDarkMode()" id="dark-btn" title="Toggle dark mode">🌙</button>
+      <button class="btn-icon" onclick="doLogout()" title="Logout" style="color:#d63939">⏻</button>
+    </div>
+  </nav>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <a href="customers.html" class="back-link">← Customers</a>
+      <div>
+        <h1 class="page-header-title" id="client-title">Trucks</h1>
+        <p class="page-header-subtitle">Manage trucks and their assigned FMC650 devices</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input type="search" class="search-input" id="search-input" placeholder="Search trucks..." oninput="filterTrucks(this.value)">
+      <button class="btn-primary" onclick="showAddTruckModal()">+ Add Truck</button>
+    </div>
+  </div>
+
+  <!-- Page body -->
+  <div class="page-body">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title" id="trucks-count">Loading...</h2>
+      </div>
+      <div id="trucks-container">
+        <div class="empty-state"><div class="empty-state-icon">⏳</div><div class="empty-state-text">Loading trucks...</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Truck form modal -->
+<div class="modal-overlay" id="truck-modal" style="display:none" onclick="closeModalOnOverlay(event,'truck-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title" id="truck-modal-title">Add Truck</h2>
+      <button class="modal-close" onclick="closeTruckModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" id="truck-name" placeholder="e.g. Truck 01" required>
+      </div>
+      <div class="form-group">
+        <label>Plate</label>
+        <input type="text" id="truck-plate" placeholder="e.g. ABC-1234">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="truck-description" placeholder="Optional notes">
+      </div>
+      <div class="form-error" id="truck-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeTruckModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveTruck()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign device modal -->
+<div class="modal-overlay" id="assign-modal" style="display:none" onclick="closeModalOnOverlay(event,'assign-modal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">Assign Device</h2>
+      <button class="modal-close" onclick="closeAssignModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.875rem;color:var(--text-light);margin:0">Unassigned FMC650 devices:</p>
+      <div class="device-select-list" id="unassigned-list">
+        <div style="padding:1rem;text-align:center;color:var(--text-light);font-size:0.875rem">Loading...</div>
+      </div>
+      <div class="form-error" id="assign-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeAssignModal()">Cancel</button>
+      <button class="btn-primary" onclick="confirmAssign()">Assign Selected</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+  const API = window.location.origin + BASE_PATH;
+
+  // Auth
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!token || !user) window.location.replace(BASE_PATH + '/login.html');
+  if (user && user.role !== 'admin' && user.role !== 'superuser') window.location.replace(BASE_PATH + '/');
+
+  // Client ID from URL
+  const params = new URLSearchParams(window.location.search);
+  const clientId = params.get('client_id');
+  if (!clientId) window.location.replace(BASE_PATH + '/customers.html');
+
+  // Dark mode
+  (function() {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark');
+      document.getElementById('dark-btn').textContent = '☀️';
+    }
+  })();
+  function toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark');
+    document.getElementById('dark-btn').textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDark);
+  }
+  function doLogout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace(BASE_PATH + '/login.html');
+  }
+
+  // User info
+  const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
+  document.getElementById('nav-user-name').textContent = user.name || user.username;
+  const pill = document.getElementById('nav-role-pill');
+  pill.textContent = user.role;
+  pill.style.background = (roleColors[user.role] || '#206bc4') + '22';
+  pill.style.color = roleColors[user.role] || '#206bc4';
+
+  // State
+  let allTrucks = [];
+  let editingTruckId = null;
+  let assigningTruckId = null;
+  let deviceOnlineMap = {};
+
+  // Load client name
+  async function loadClientName() {
+    try {
+      const res = await fetch(`${API}/api/clients`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.success) {
+        const client = data.clients.find(c => String(c.id) === String(clientId));
+        if (client) document.getElementById('client-title').textContent = client.name + ' — Trucks';
+      }
+    } catch (e) {}
+  }
+
+  // Load devices online status
+  async function loadDeviceStatus() {
+    try {
+      const res = await fetch(`${API}/api/devices`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.success) {
+        deviceOnlineMap = {};
+        data.devices.forEach(d => {
+          const lastSeen = new Date(d.last_seen);
+          deviceOnlineMap[d.imei] = (Date.now() - lastSeen) < 5 * 60 * 1000;
+        });
+      }
+    } catch (e) {}
+  }
+
+  async function loadTrucks() {
+    try {
+      await loadDeviceStatus();
+      const res = await fetch(`${API}/api/trucks?client_id=${clientId}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.status === 401) { doLogout(); return; }
+      const data = await res.json();
+      if (data.success) {
+        allTrucks = data.trucks;
+        renderTrucks(allTrucks);
+      }
+    } catch (e) {
+      document.getElementById('trucks-container').innerHTML =
+        `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Error loading trucks</div></div>`;
+    }
+  }
+
+  function renderTrucks(trucks) {
+    const container = document.getElementById('trucks-container');
+    document.getElementById('trucks-count').textContent = `${trucks.length} truck${trucks.length !== 1 ? 's' : ''}`;
+
+    if (!trucks.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🚛</div><div class="empty-state-text">No trucks yet. Click "+ Add Truck" to create one.</div></div>`;
+      return;
+    }
+
+    container.innerHTML = `<div class="trucks-grid">${trucks.map(renderTruckCard).join('')}</div>`;
+  }
+
+  function renderTruckCard(truck) {
+    const deviceChips = (truck.devices || []).map(d => {
+      const online = deviceOnlineMap[d.imei];
+      return `<span class="device-chip">
+        <span class="${online ? 'online-dot' : 'offline-dot'}"></span>
+        ${escHtml(d.imei)}
+        <button class="remove-device" onclick="removeDevice('${escHtml(d.imei)}',${truck.id})" title="Remove">✕</button>
+      </span>`;
+    }).join('');
+
+    return `
+      <div class="truck-card" id="truck-${truck.id}">
+        <div class="truck-header">
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <span class="truck-icon">🚛</span>
+            <div>
+              <div class="truck-name">${escHtml(truck.name)}</div>
+              <div class="truck-plate">${truck.plate ? escHtml(truck.plate) : '<span style="opacity:0.5">No plate</span>'}</div>
+            </div>
+          </div>
+          <div class="truck-actions">
+            <button class="btn-sm btn-edit" onclick="showEditTruckModal(${truck.id},'${escHtml(truck.name)}','${escHtml(truck.plate||'')}','${escHtml(truck.description||'')}')">Edit</button>
+            <button class="btn-sm btn-danger" onclick="deleteTruck(${truck.id},'${escHtml(truck.name)}')">Delete</button>
+          </div>
+        </div>
+        ${truck.description ? `<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.5rem">${escHtml(truck.description)}</div>` : ''}
+        <div class="truck-devices">
+          <div class="truck-devices-title">Devices (${(truck.devices||[]).length})</div>
+          ${deviceChips || '<div class="no-devices">No devices assigned</div>'}
+        </div>
+        <div class="truck-footer">
+          <button class="btn-sm btn-primary" onclick="showAssignModal(${truck.id})" style="font-size:0.75rem">+ Assign Device</button>
+          ${(truck.devices||[]).length > 0 ? `<button class="btn-sm btn-view" onclick="viewTruckMap(${truck.id})">View on Map →</button>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function filterTrucks(q) {
+    if (!q.trim()) { renderTrucks(allTrucks); return; }
+    const lower = q.toLowerCase();
+    renderTrucks(allTrucks.filter(t =>
+      (t.name||'').toLowerCase().includes(lower) ||
+      (t.plate||'').toLowerCase().includes(lower) ||
+      (t.description||'').toLowerCase().includes(lower)
+    ));
+  }
+
+  function viewTruckMap(truckId) {
+    window.location.href = BASE_PATH + '/?truck_id=' + truckId;
+  }
+
+  // ── Truck modal ──
+  function showAddTruckModal() {
+    editingTruckId = null;
+    document.getElementById('truck-modal-title').textContent = 'Add Truck';
+    document.getElementById('truck-name').value = '';
+    document.getElementById('truck-plate').value = '';
+    document.getElementById('truck-description').value = '';
+    document.getElementById('truck-error').style.display = 'none';
+    document.getElementById('truck-modal').style.display = 'flex';
+    document.getElementById('truck-name').focus();
+  }
+
+  function showEditTruckModal(id, name, plate, description) {
+    editingTruckId = id;
+    document.getElementById('truck-modal-title').textContent = 'Edit Truck';
+    document.getElementById('truck-name').value = name;
+    document.getElementById('truck-plate').value = plate;
+    document.getElementById('truck-description').value = description;
+    document.getElementById('truck-error').style.display = 'none';
+    document.getElementById('truck-modal').style.display = 'flex';
+    document.getElementById('truck-name').focus();
+  }
+
+  function closeTruckModal() {
+    document.getElementById('truck-modal').style.display = 'none';
+  }
+
+  async function saveTruck() {
+    const name = document.getElementById('truck-name').value.trim();
+    const plate = document.getElementById('truck-plate').value.trim();
+    const description = document.getElementById('truck-description').value.trim();
+    const errorEl = document.getElementById('truck-error');
+
+    if (!name) { errorEl.textContent = 'Name is required'; errorEl.style.display = 'block'; return; }
+    errorEl.style.display = 'none';
+
+    try {
+      const url = editingTruckId ? `${API}/api/trucks/${editingTruckId}` : `${API}/api/trucks`;
+      const method = editingTruckId ? 'PUT' : 'POST';
+      const body = editingTruckId ? { name, plate, description } : { client_id: clientId, name, plate, description };
+
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      closeTruckModal();
+      await loadTrucks();
+    } catch (e) {
+      errorEl.textContent = e.message || 'Error saving truck';
+      errorEl.style.display = 'block';
+    }
+  }
+
+  async function deleteTruck(id, name) {
+    if (!confirm(`Delete truck "${name}"? Devices will be unassigned.`)) return;
+    try {
+      const res = await fetch(`${API}/api/trucks/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      await loadTrucks();
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  // ── Assign device modal ──
+  async function showAssignModal(truckId) {
+    assigningTruckId = truckId;
+    document.getElementById('assign-error').style.display = 'none';
+    document.getElementById('assign-modal').style.display = 'flex';
+
+    const list = document.getElementById('unassigned-list');
+    list.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light);font-size:0.875rem">Loading...</div>';
+
+    try {
+      const res = await fetch(`${API}/api/devices/unassigned`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      if (!data.devices.length) {
+        list.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light);font-size:0.875rem">No unassigned devices available</div>';
+        return;
+      }
+
+      list.innerHTML = data.devices.map(d => {
+        const online = deviceOnlineMap[d.imei];
+        const lastSeen = d.last_seen ? new Date(d.last_seen).toLocaleString('es-MX') : 'Never';
+        return `<label class="device-select-item">
+          <input type="checkbox" value="${escHtml(d.imei)}">
+          <span class="${online ? 'online-dot' : 'offline-dot'}"></span>
+          <span style="flex:1">
+            <strong>${escHtml(d.imei)}</strong>
+            <span style="color:var(--text-light);font-size:0.75rem;display:block">Last seen: ${lastSeen}</span>
+          </span>
+        </label>`;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = `<div style="padding:1rem;text-align:center;color:#d63939;font-size:0.875rem">${e.message}</div>`;
+    }
+  }
+
+  function closeAssignModal() {
+    document.getElementById('assign-modal').style.display = 'none';
+    assigningTruckId = null;
+  }
+
+  async function confirmAssign() {
+    const checked = [...document.querySelectorAll('#unassigned-list input[type=checkbox]:checked')].map(cb => cb.value);
+    const errorEl = document.getElementById('assign-error');
+    if (!checked.length) { errorEl.textContent = 'Select at least one device'; errorEl.style.display = 'block'; return; }
+    errorEl.style.display = 'none';
+
+    try {
+      await Promise.all(checked.map(imei =>
+        fetch(`${API}/api/trucks/${assigningTruckId}/devices/${imei}`, {
+          method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+        })
+      ));
+      closeAssignModal();
+      await loadTrucks();
+    } catch (e) {
+      errorEl.textContent = 'Error assigning devices: ' + e.message;
+      errorEl.style.display = 'block';
+    }
+  }
+
+  async function removeDevice(imei, truckId) {
+    if (!confirm(`Remove device ${imei} from this truck?`)) return;
+    try {
+      await fetch(`${API}/api/trucks/${truckId}/devices/${encodeURIComponent(imei)}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      });
+      await loadTrucks();
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  function closeModalOnOverlay(event, modalId) {
+    if (event.target === document.getElementById(modalId)) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+  }
+
+  function escHtml(str) {
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // Init
+  loadClientName();
+  loadTrucks();
+</script>
+</body>
+</html>

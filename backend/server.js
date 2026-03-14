@@ -214,6 +214,94 @@ app.get('/api/clients/:id/devices', requireAuth, requireRole('admin', 'superuser
   }
 });
 
+// ==================== RUTAS DE TRUCKS ====================
+
+// GET /api/trucks?client_id=X
+app.get('/api/trucks', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const { client_id } = req.query;
+    if (!client_id) return res.status(400).json({ success: false, error: 'client_id required' });
+    const trucks = await db.getTrucks(client_id);
+    res.json({ success: true, trucks });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error fetching trucks' });
+  }
+});
+
+// GET /api/trucks/:id
+app.get('/api/trucks/:id', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const truck = await db.getTruck(req.params.id);
+    if (!truck) return res.status(404).json({ success: false, error: 'Truck not found' });
+    res.json({ success: true, truck });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error fetching truck' });
+  }
+});
+
+// POST /api/trucks
+app.post('/api/trucks', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const { client_id, name, plate, description } = req.body;
+    if (!client_id || !name) return res.status(400).json({ success: false, error: 'client_id and name required' });
+    const id = await db.createTruck(client_id, name, plate, description);
+    res.json({ success: true, id });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error creating truck' });
+  }
+});
+
+// PUT /api/trucks/:id
+app.put('/api/trucks/:id', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const { name, plate, description } = req.body;
+    await db.updateTruck(req.params.id, { name, plate, description });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error updating truck' });
+  }
+});
+
+// DELETE /api/trucks/:id
+app.delete('/api/trucks/:id', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    await db.deleteTruck(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error deleting truck' });
+  }
+});
+
+// PUT /api/trucks/:id/devices/:imei  — assign device to truck
+app.put('/api/trucks/:id/devices/:imei', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    await db.assignDeviceToTruck(req.params.imei, req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error assigning device' });
+  }
+});
+
+// DELETE /api/trucks/:id/devices/:imei  — remove device from truck
+app.delete('/api/trucks/:id/devices/:imei', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    await db.removeDeviceFromTruck(req.params.imei);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error removing device' });
+  }
+});
+
+// GET /api/devices/unassigned
+app.get('/api/devices/unassigned', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const devices = await db.getUnassignedDevices();
+    res.json({ success: true, devices });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error fetching unassigned devices' });
+  }
+});
+
 // GET /api/health - Health check (public)
 app.get('/api/health', async (req, res) => {
   try {

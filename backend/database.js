@@ -111,6 +111,25 @@ async function createTables() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
+    // Tabla trucks
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS trucks (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        client_id INT NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        plate VARCHAR(20),
+        description VARCHAR(255),
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_client (client_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
+    // Add truck_id to devices if not exists
+    await connection.query(`
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS truck_id INT NULL,
+                          ADD INDEX IF NOT EXISTS idx_truck (truck_id)
+    `);
+
     console.log('✅ Tablas verificadas/creadas');
   } catch (error) {
     console.error('❌ Error creando tablas:', error.message);
@@ -125,16 +144,21 @@ const db = {
   // Obtener todos los dispositivos con estadísticas
   async getDevices() {
     const [rows] = await pool.query(`
-      SELECT 
+      SELECT
         d.imei,
         d.first_seen,
         d.last_seen,
         d.total_records,
+        d.truck_id,
+        t.name as truck_name,
+        t.plate as truck_plate,
+        t.client_id,
         COUNT(DISTINCT c.id) as total_connections,
         MAX(g.timestamp) as latest_gps,
         AVG(g.speed) as avg_speed,
         MAX(g.speed) as max_speed
       FROM devices d
+      LEFT JOIN trucks t ON d.truck_id = t.id
       LEFT JOIN connections c ON d.id = c.device_id
       LEFT JOIN gps_data g ON d.id = g.device_id
       GROUP BY d.id
@@ -237,6 +261,68 @@ const db = {
 
   async deleteUser(id) {
     await pool.query('DELETE FROM users WHERE id = ?', [id]);
+  },
+
+  // ==================== TRUCKS ====================
+
+  async getTrucks(clientId) {
+    const [rows] = await pool.query(`
+      SELECT t.*, COUNT(d.id) as device_count
+      FROM trucks t
+      LEFT JOIN devices d ON d.truck_id = t.id
+      WHERE t.client_id = ?
+      GROUP BY t.id
+      ORDER BY t.name ASC
+    `, [clientId]);
+    return rows;
+  },
+
+  async getTruck(id) {
+    const [[truck]] = await pool.query('SELECT * FROM trucks WHERE id = ?', [id]);
+    if (!truck) return null;
+    const [devices] = await pool.query(`
+      SELECT imei, last_seen, total_records FROM devices WHERE truck_id = ?
+    `, [id]);
+    return { ...truck, devices };
+  },
+
+  async createTruck(clientId, name, plate, description) {
+    const [result] = await pool.query(
+      'INSERT INTO trucks (client_id, name, plate, description) VALUES (?, ?, ?, ?)',
+      [clientId, name, plate || null, description || null]
+    );
+    return result.insertId;
+  },
+
+  async updateTruck(id, fields) {
+    const sets = [];
+    const values = [];
+    if (fields.name        !== undefined) { sets.push('name = ?');        values.push(fields.name); }
+    if (fields.plate       !== undefined) { sets.push('plate = ?');       values.push(fields.plate); }
+    if (fields.description !== undefined) { sets.push('description = ?'); values.push(fields.description); }
+    if (sets.length === 0) return;
+    values.push(id);
+    await pool.query(`UPDATE trucks SET ${sets.join(', ')} WHERE id = ?`, values);
+  },
+
+  async deleteTruck(id) {
+    await pool.query('UPDATE devices SET truck_id = NULL WHERE truck_id = ?', [id]);
+    await pool.query('DELETE FROM trucks WHERE id = ?', [id]);
+  },
+
+  async assignDeviceToTruck(imei, truckId) {
+    await pool.query('UPDATE devices SET truck_id = ? WHERE imei = ?', [truckId, imei]);
+  },
+
+  async removeDeviceFromTruck(imei) {
+    await pool.query('UPDATE devices SET truck_id = NULL WHERE imei = ?', [imei]);
+  },
+
+  async getUnassignedDevices() {
+    const [rows] = await pool.query(
+      'SELECT imei, last_seen, total_records FROM devices WHERE truck_id IS NULL ORDER BY last_seen DESC'
+    );
+    return rows;
   },
 
   // Health check
