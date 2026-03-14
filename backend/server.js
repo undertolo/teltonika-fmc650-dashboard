@@ -302,6 +302,17 @@ app.delete('/api/trucks/:id/devices/:imei', requireAuth, requireRole('admin', 's
   }
 });
 
+// GET /api/devices/admin - Full device list with signal, battery, IO data
+app.get('/api/devices/admin', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
+  try {
+    const devices = await db.getDevicesAdmin();
+    res.json({ success: true, devices });
+  } catch (error) {
+    console.error('Error fetching devices admin:', error);
+    res.status(500).json({ success: false, error: 'Error fetching devices' });
+  }
+});
+
 // GET /api/devices/unassigned
 app.get('/api/devices/unassigned', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
   try {

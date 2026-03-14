@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dispositivos — FAHR Electronic Systems</title>
+  <link rel="stylesheet" href="css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <style>
+    .signal-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 16px; }
+    .signal-bar  { width: 4px; border-radius: 1px; background: var(--tblr-gray-300); }
+    .signal-bar.filled { background: var(--tblr-success); }
+    .signal-bar.filled.weak   { background: var(--tblr-danger); }
+    .signal-bar.filled.medium { background: var(--tblr-warning); }
+    .signal-bar:nth-child(1) { height: 25%; }
+    .signal-bar:nth-child(2) { height: 45%; }
+    .signal-bar:nth-child(3) { height: 65%; }
+    .signal-bar:nth-child(4) { height: 82%; }
+    .signal-bar:nth-child(5) { height: 100%; }
+    .table td { vertical-align: middle; }
+    .badge-online  { background: rgba(47,179,68,.12);  color: #2fb344; }
+    .badge-offline { background: rgba(214,57,57,.12);  color: #d63939; }
+    .badge-sleep   { background: rgba(245,159,0,.12);  color: #f59f00; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Top header ───────────────────────────────────────── -->
+  <header class="navbar navbar-expand-md navbar-light d-print-none">
+    <div class="container-xl">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <h1 class="navbar-brand navbar-brand-autodark pe-0 pe-md-3 mb-0">
+        <a href="customers.html" class="d-flex align-items-center text-decoration-none">
+          <img src="img/logo-small.svg" class="hide-theme-dark" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <img src="img/logo-small-white.svg" class="hide-theme-light" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <span class="ms-2" style="font-size:1rem;font-weight:600">FAHR <span class="d-none d-lg-inline-block">Electronic Systems</span></span>
+        </a>
+      </h1>
+      <div class="navbar-nav flex-row order-md-last ms-auto align-items-center">
+        <div class="d-none d-md-flex me-2 align-items-center">
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-dark" onclick="toggleDarkMode()" title="Modo oscuro">
+            <i class="icon ti ti-moon"></i>
+          </a>
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-light" onclick="toggleDarkMode()" title="Modo claro">
+            <i class="icon ti ti-brightness-up"></i>
+          </a>
+        </div>
+        <div class="nav-item dropdown">
+          <a href="javascript:void(0)" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="avatar avatar-sm" id="nav-avatar">U</span>
+            <div class="d-none d-sm-block ps-2">
+              <div id="nav-user-name" class="lh-1" style="font-size:.875rem;font-weight:500"></div>
+              <div id="nav-user-role" class="mt-1 small text-muted"></div>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a href="javascript:void(0)" class="dropdown-item d-md-none" onclick="toggleDarkMode()">
+              <i class="ti ti-moon me-2 hide-theme-dark"></i>
+              <i class="ti ti-brightness-up me-2 hide-theme-light"></i>
+              Cambiar tema
+            </a>
+            <div class="dropdown-divider d-md-none"></div>
+            <a href="javascript:void(0)" class="dropdown-item text-danger" onclick="doLogout()">
+              <i class="ti ti-logout me-2"></i>Cerrar sesión
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Secondary menu ───────────────────────────────────── -->
+  <div class="navbar-expand-md">
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <div class="navbar navbar-light">
+        <div class="container-xl">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" id="nav-monitor-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop"></i></span>
+                <span class="nav-link-title">Monitor</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="customers.html">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-users"></i></span>
+                <span class="nav-link-title">Clientes</span>
+              </a>
+            </li>
+          </ul>
+          <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-md-last" id="nav-settings-wrap">
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link" data-bs-toggle="dropdown">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-settings"></i></span>
+                  <span class="nav-link-title">Configuración</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                  <a href="javascript:void(0)" class="dropdown-item" id="nav-settings-link" style="display:none">
+                    <i class="ti ti-users me-2"></i>Administrar Usuarios
+                  </a>
+                  <div class="dropdown-divider" id="nav-settings-divider" style="display:none"></div>
+                  <a href="customers.html" class="dropdown-item">
+                    <i class="ti ti-truck me-2"></i>Vehículos
+                  </a>
+                  <a href="devices-admin.html" class="dropdown-item active">
+                    <i class="ti ti-router me-2"></i>Dispositivos
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Page wrapper ─────────────────────────────────────── -->
+  <div class="page-wrapper">
+    <div class="page-body">
+      <div class="container-xl">
+
+        <div class="page-header d-print-none">
+          <div class="row align-items-center">
+            <div class="col">
+              <h2 class="page-title">Dispositivos Teltonika</h2>
+              <div class="text-muted mt-1">Listado de todos los dispositivos FMC650 registrados</div>
+            </div>
+            <div class="col-auto ms-auto d-print-none">
+              <div class="d-flex gap-2 align-items-center">
+                <span id="count-badge" class="badge bg-secondary-subtle text-secondary"></span>
+                <input type="search" id="search-input" class="form-control form-control-sm"
+                       placeholder="Buscar IMEI, unidad..." oninput="filterDevices(this.value)"
+                       style="width:220px;">
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadDevices()" title="Actualizar">
+                  <i class="ti ti-refresh"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="row row-deck row-cards mb-3" id="summary-cards" style="display:none">
+          <div class="col-sm-6 col-xl-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="subheader">Total dispositivos</div>
+                </div>
+                <div class="h1 mb-0" id="stat-total">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="subheader">En línea</div>
+                <div class="h1 mb-0 text-success" id="stat-online">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="subheader">Sin asignar</div>
+                <div class="h1 mb-0 text-warning" id="stat-unassigned">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-xl-3">
+            <div class="card">
+              <div class="card-body">
+                <div class="subheader">Señal promedio</div>
+                <div class="h1 mb-0 text-blue" id="stat-signal">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Devices table -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table table-vcenter card-table table-hover" id="devices-table">
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>IMEI (Número de Serie)</th>
+                  <th>Señal Celular</th>
+                  <th>Batería</th>
+                  <th>Voltaje Ext.</th>
+                  <th>Unidad asignada</th>
+                  <th>Última conexión</th>
+                  <th>Registros</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="devices-tbody">
+                <tr>
+                  <td colspan="9" class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm me-2"></div>Cargando dispositivos...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="footer footer-transparent d-print-none">
+      <div class="container-xl">
+        <div class="row text-center align-items-center">
+          <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+            <ul class="list-inline list-inline-dots mb-0">
+              <li class="list-inline-item">FAHR Electronics Systems &copy; <span id="footer-year"></span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div><!-- /.page-wrapper -->
+</div><!-- /.page -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+  const API = window.location.origin + BASE_PATH;
+
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!token || !user) window.location.replace(BASE_PATH + '/login.html');
+  if (user && user.role !== 'admin' && user.role !== 'superuser') window.location.replace(BASE_PATH + '/');
+
+  // Dark mode
+  (function() {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
+    }
+  })();
+  function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    document.documentElement.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('darkMode', (!isDark).toString());
+  }
+  function doLogout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace(BASE_PATH + '/login.html');
+  }
+
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+  document.getElementById('nav-monitor-link').href = BASE_PATH + '/';
+
+  // User info
+  const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
+  if (user) {
+    const color = roleColors[user.role] || '#206bc4';
+    document.getElementById('nav-avatar').textContent = (user.name || user.username || '?')[0].toUpperCase();
+    document.getElementById('nav-avatar').style.background = color;
+    document.getElementById('nav-user-name').textContent = user.name || user.username;
+    document.getElementById('nav-user-role').textContent = user.role;
+    if (user.role === 'superuser') {
+      document.getElementById('nav-settings-link').style.display = '';
+      document.getElementById('nav-settings-link').href = BASE_PATH + '/';
+      document.getElementById('nav-settings-divider').style.display = '';
+    }
+  }
+
+  // ── Data ──────────────────────────────────────────────────
+  let allDevices = [];
+
+  const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+
+  function isOnline(last_seen) {
+    if (!last_seen) return false;
+    return (Date.now() - new Date(last_seen).getTime()) < ONLINE_THRESHOLD_MS;
+  }
+
+  // Signal bars: 0-5 scale
+  function signalBars(level) {
+    if (level === null || level === undefined) {
+      return `<span class="text-muted small">N/D</span>`;
+    }
+    const n = parseInt(level);
+    const colorClass = n <= 1 ? 'weak' : n <= 3 ? 'medium' : '';
+    let bars = '';
+    for (let i = 1; i <= 5; i++) {
+      bars += `<span class="signal-bar${i <= n ? ' filled ' + colorClass : ''}"></span>`;
+    }
+    const label = ['Sin señal', 'Muy débil', 'Débil', 'Buena', 'Muy buena', 'Excelente'][n] || '—';
+    return `<div class="d-flex align-items-center gap-2">
+      <div class="signal-bars" title="${label} (${n}/5)">${bars}</div>
+      <small class="text-muted">${n}/5</small>
+    </div>`;
+  }
+
+  function batteryDisplay(mv) {
+    if (mv === null || mv === undefined) return '<span class="text-muted small">N/D</span>';
+    const v = (mv / 1000).toFixed(2);
+    // FMC650 internal battery: ~3.7V nominal, 4.2V full, 3.0V empty
+    const pct = Math.min(100, Math.max(0, Math.round((mv - 3000) / (4200 - 3000) * 100)));
+    const color = pct < 20 ? 'danger' : pct < 50 ? 'warning' : 'success';
+    return `<div class="d-flex align-items-center gap-1">
+      <i class="ti ti-battery-${pct < 20 ? 'low' : pct < 60 ? '2' : '4'} text-${color}"></i>
+      <small>${v}V</small>
+    </div>`;
+  }
+
+  function extVoltageDisplay(mv) {
+    if (mv === null || mv === undefined) return '<span class="text-muted small">N/D</span>';
+    const v = (mv / 1000).toFixed(1);
+    if (mv < 100) return `<span class="text-muted small"><i class="ti ti-plug-off me-1"></i>Desconectado</span>`;
+    const color = mv >= 11000 ? 'success' : 'warning';
+    return `<span class="text-${color}"><i class="ti ti-plug me-1"></i>${v}V</span>`;
+  }
+
+  function formatDate(dt) {
+    if (!dt) return '—';
+    const d = new Date(dt);
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 60000)     return 'Hace ' + Math.floor(diff/1000) + 's';
+    if (diff < 3600000)   return 'Hace ' + Math.floor(diff/60000) + 'm';
+    if (diff < 86400000)  return 'Hace ' + Math.floor(diff/3600000) + 'h';
+    return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+  }
+
+  async function loadDevices() {
+    document.getElementById('devices-tbody').innerHTML = `
+      <tr><td colspan="9" class="text-center text-muted py-4">
+        <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+      </td></tr>`;
+    try {
+      const res = await fetch(`${API}/api/devices/admin`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.status === 401) { doLogout(); return; }
+      const data = await res.json();
+      if (data.success) {
+        allDevices = data.devices;
+        updateSummary(allDevices);
+        renderDevices(allDevices);
+      } else {
+        showError(data.error || 'Error al cargar dispositivos');
+      }
+    } catch (e) {
+      showError('Servidor no disponible');
+    }
+  }
+
+  function updateSummary(devices) {
+    const online = devices.filter(d => isOnline(d.last_seen)).length;
+    const unassigned = devices.filter(d => !d.truck_id).length;
+    const signals = devices.map(d => d.signal_level).filter(s => s !== null && s !== undefined);
+    const avgSignal = signals.length ? (signals.reduce((a,b)=>a+b,0)/signals.length).toFixed(1) : '—';
+    document.getElementById('stat-total').textContent = devices.length;
+    document.getElementById('stat-online').textContent = online;
+    document.getElementById('stat-unassigned').textContent = unassigned;
+    document.getElementById('stat-signal').textContent = avgSignal !== '—' ? avgSignal + '/5' : '—';
+    document.getElementById('summary-cards').style.display = '';
+    document.getElementById('count-badge').textContent = devices.length + ' dispositivos';
+  }
+
+  function renderDevices(devices) {
+    const tbody = document.getElementById('devices-tbody');
+
+    if (!devices.length) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">No se encontraron dispositivos</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = devices.map(d => {
+      const online = isOnline(d.last_seen);
+      const sleeping = d.sleep_mode == 1;
+      let statusBadge;
+      if (online) {
+        statusBadge = `<span class="badge badge-online"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`;
+      } else if (sleeping) {
+        statusBadge = `<span class="badge badge-sleep"><span class="status-dot bg-warning me-1"></span>Dormido</span>`;
+      } else {
+        statusBadge = `<span class="badge badge-offline"><span class="status-dot bg-danger me-1"></span>Sin conexión</span>`;
+      }
+
+      const truck = d.truck_name
+        ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
+        : `<span class="text-muted small">Sin asignar</span>`;
+
+      return `<tr>
+        <td>${statusBadge}</td>
+        <td>
+          <div class="fw-bold font-monospace">${escHtml(d.imei)}</div>
+          <small class="text-muted">ID: ${d.id}</small>
+        </td>
+        <td>${signalBars(d.signal_level)}</td>
+        <td>${batteryDisplay(d.battery_mv)}</td>
+        <td>${extVoltageDisplay(d.ext_voltage_mv)}</td>
+        <td>${truck}</td>
+        <td>
+          <div>${formatDate(d.last_seen)}</div>
+          ${d.last_gps_time ? `<small class="text-muted">GPS: ${formatDate(d.last_gps_time)}</small>` : ''}
+        </td>
+        <td class="text-muted">${(d.total_records || 0).toLocaleString()}</td>
+        <td>
+          <a href="${BASE_PATH + '/?imei=' + encodeURIComponent(d.imei)}" class="btn btn-sm btn-ghost-primary" title="Ver en mapa">
+            <i class="ti ti-map-pin"></i>
+          </a>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterDevices(q) {
+    if (!q.trim()) { renderDevices(allDevices); return; }
+    const lower = q.toLowerCase();
+    renderDevices(allDevices.filter(d =>
+      (d.imei       || '').toLowerCase().includes(lower) ||
+      (d.truck_name || '').toLowerCase().includes(lower) ||
+      (d.truck_plate|| '').toLowerCase().includes(lower)
+    ));
+  }
+
+  function showError(msg) {
+    document.getElementById('devices-tbody').innerHTML = `
+      <tr><td colspan="9" class="text-center py-4">
+        <i class="ti ti-alert-triangle text-danger me-2"></i>
+        <span class="text-danger">${escHtml(msg)}</span>
+      </td></tr>`;
+  }
+
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  loadDevices();
+</script>
+</body>
+</html>

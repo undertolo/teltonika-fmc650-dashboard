@@ -332,6 +332,43 @@ const db = {
     return rows;
   },
 
+  async getDevicesAdmin() {
+    const [rows] = await pool.query(`
+      SELECT
+        d.id,
+        d.imei,
+        d.first_seen,
+        d.last_seen,
+        d.total_records,
+        d.truck_id,
+        t.name  AS truck_name,
+        t.plate AS truck_plate,
+        t.client_id,
+        g.speed      AS last_speed,
+        g.latitude   AS last_lat,
+        g.longitude  AS last_lng,
+        g.satellites AS last_satellites,
+        g.timestamp  AS last_gps_time,
+        MAX(CASE WHEN io.io_id = 21  THEN io.io_value END) AS signal_level,
+        MAX(CASE WHEN io.io_id = 67  THEN io.io_value END) AS battery_mv,
+        MAX(CASE WHEN io.io_id = 66  THEN io.io_value END) AS ext_voltage_mv,
+        MAX(CASE WHEN io.io_id = 240 THEN io.io_value END) AS movement,
+        MAX(CASE WHEN io.io_id = 200 THEN io.io_value END) AS sleep_mode
+      FROM devices d
+      LEFT JOIN trucks t ON d.truck_id = t.id
+      LEFT JOIN (
+        SELECT device_id, MAX(id) AS max_gps_id FROM gps_data GROUP BY device_id
+      ) latest ON latest.device_id = d.id
+      LEFT JOIN gps_data g ON g.id = latest.max_gps_id
+      LEFT JOIN io_data io ON io.gps_record_id = g.id
+      GROUP BY d.id, d.imei, d.first_seen, d.last_seen, d.total_records,
+               d.truck_id, t.name, t.plate, t.client_id,
+               g.speed, g.latitude, g.longitude, g.satellites, g.timestamp
+      ORDER BY d.last_seen DESC
+    `);
+    return rows;
+  },
+
   async getUnassignedDevices() {
     const [rows] = await pool.query(
       'SELECT imei, last_seen, total_records FROM devices WHERE truck_id IS NULL ORDER BY last_seen DESC'
