@@ -381,7 +381,8 @@ const db = {
         MAX(CASE WHEN io.io_id = 67  THEN io.io_value END) AS battery_mv,
         MAX(CASE WHEN io.io_id = 66  THEN io.io_value END) AS ext_voltage_mv,
         MAX(CASE WHEN io.io_id = 240 THEN io.io_value END) AS movement,
-        MAX(CASE WHEN io.io_id = 200 THEN io.io_value END) AS sleep_mode
+        MAX(CASE WHEN io.io_id = 200 THEN io.io_value END) AS sleep_mode,
+        MAX(CASE WHEN io.io_id = 239 THEN io.io_value END) AS ignition
       FROM devices d
       LEFT JOIN trucks t ON d.truck_id = t.id
       LEFT JOIN (

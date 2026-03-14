@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor — FAHR Electronic Systems</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <style>
+    /* Make the map fill remaining vertical height */
+    .map-wrapper { position: relative; }
+    #map { height: 560px; width: 100%; border-radius: 4px; }
+
+    /* Device table scrollable */
+    .device-table-wrap { max-height: 560px; overflow-y: auto; }
+
+    /* Row click highlight */
+    .device-row { cursor: pointer; transition: background .12s; }
+    .device-row:hover { background: rgba(32,107,196,.06) !important; }
+    .device-row.active { background: rgba(32,107,196,.13) !important; }
+
+    /* Route overlay badge */
+    #route-bar {
+      position: absolute; top: 8px; left: 8px; z-index: 500;
+      display: none; gap: 6px; align-items: center;
+    }
+
+    /* Favourite star */
+    .star-btn { background: none; border: none; padding: 2px 4px; cursor: pointer; font-size: 1rem; color: var(--tblr-muted); }
+    .star-btn.starred { color: #f59f00; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Top header ───────────────────────────────────────── -->
+  <header class="navbar navbar-expand-md navbar-light d-print-none">
+    <div class="container-xl">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <h1 class="navbar-brand navbar-brand-autodark pe-0 pe-md-3 mb-0">
+        <a href="/" class="d-flex align-items-center text-decoration-none">
+          <img src="img/logo-small.svg" class="hide-theme-dark" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <img src="img/logo-small-white.svg" class="hide-theme-light" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <span class="ms-2" style="font-size:1rem;font-weight:600">FAHR <span class="d-none d-lg-inline-block">Electronic Systems</span></span>
+        </a>
+      </h1>
+      <div class="navbar-nav flex-row order-md-last ms-auto align-items-center">
+        <div class="d-none d-md-flex me-3 align-items-center gap-2 text-muted" style="font-size:.75rem">
+          <span id="status-dot" class="status-dot bg-secondary"></span>
+          <span id="last-update-text">Actualizando...</span>
+        </div>
+        <div class="d-none d-md-flex me-2 align-items-center">
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-dark" onclick="toggleDarkMode()" title="Modo oscuro">
+            <i class="icon ti ti-moon"></i>
+          </a>
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-light" onclick="toggleDarkMode()" title="Modo claro">
+            <i class="icon ti ti-brightness-up"></i>
+          </a>
+        </div>
+        <div class="nav-item dropdown">
+          <a href="javascript:void(0)" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown">
+            <span class="avatar avatar-sm" id="nav-avatar">U</span>
+            <div class="d-none d-sm-block ps-2">
+              <div id="nav-user-name" class="lh-1" style="font-size:.875rem;font-weight:500"></div>
+              <div id="nav-user-role" class="mt-1 small text-muted"></div>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a href="javascript:void(0)" class="dropdown-item d-md-none" onclick="toggleDarkMode()">
+              <i class="ti ti-moon me-2 hide-theme-dark"></i>
+              <i class="ti ti-brightness-up me-2 hide-theme-light"></i>Cambiar tema
+            </a>
+            <div class="dropdown-divider d-md-none"></div>
+            <a href="javascript:void(0)" class="dropdown-item text-danger" onclick="doLogout()">
+              <i class="ti ti-logout me-2"></i>Cerrar sesión
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Secondary menu ───────────────────────────────────── -->
+  <div class="navbar-expand-md">
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <div class="navbar navbar-light">
+        <div class="container-xl">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="customers.html">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-arrow-left"></i></span>
+                <span class="nav-link-title">Clientes</span>
+              </a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop"></i></span>
+                <span class="nav-link-title" id="nav-client-name">Monitor</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="nav-vehicles-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-truck"></i></span>
+                <span class="nav-link-title">Vehículos</span>
+              </a>
+            </li>
+          </ul>
+          <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-md-last" id="nav-settings-wrap" style="display:none">
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link" data-bs-toggle="dropdown">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-settings"></i></span>
+                  <span class="nav-link-title">Configuración</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                  <a href="vehicles.html" class="dropdown-item"><i class="ti ti-truck me-2"></i>Vehículos</a>
+                  <a href="devices-admin.html" class="dropdown-item"><i class="ti ti-router me-2"></i>Dispositivos</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Page wrapper ─────────────────────────────────────── -->
+  <div class="page-wrapper">
+    <div class="page-body">
+      <div class="container-xl">
+
+        <!-- Page header -->
+        <div class="page-header d-print-none mb-3">
+          <div class="row align-items-center">
+            <div class="col">
+              <h2 class="page-title" id="page-client-name">Monitor</h2>
+            </div>
+            <div class="col-auto ms-auto d-flex gap-2 align-items-center">
+              <select id="route-hours" class="form-select form-select-sm" style="width:160px" onchange="reloadRoute()">
+                <option value="6">Ruta: últimas 6h</option>
+                <option value="24" selected>Ruta: últimas 24h</option>
+                <option value="48">Ruta: últimas 48h</option>
+                <option value="168">Ruta: última semana</option>
+              </select>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadData(false)" title="Actualizar">
+                <i class="ti ti-refresh"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map (left col-md-7) + Device list (right col-md-5) -->
+        <div class="row row-deck row-cards g-3">
+
+          <!-- MAP -->
+          <div class="col-sm-12 col-md-7">
+            <div class="card h-100">
+              <div class="card-header py-2">
+                <h3 class="card-title"><i class="ti ti-map-2 me-2"></i>Mapa en tiempo real</h3>
+                <div class="card-options">
+                  <div id="route-bar" class="d-flex align-items-center gap-2">
+                    <span class="badge bg-blue-lt" id="route-label"></span>
+                    <button class="btn btn-sm btn-ghost-secondary" onclick="clearSelection()" title="Limpiar selección">
+                      <i class="ti ti-x"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body p-0 map-wrapper">
+                <div id="map"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEVICE LIST -->
+          <div class="col-sm-12 col-md-5">
+            <div class="card h-100">
+              <div class="card-header py-2">
+                <h3 class="card-title"><i class="ti ti-list me-2"></i>Dispositivos</h3>
+                <div class="card-options">
+                  <span id="device-count" class="badge bg-secondary-subtle text-secondary me-2"></span>
+                  <input type="search" id="device-search" class="form-control form-control-sm"
+                         placeholder="Buscar..." oninput="filterTable(this.value)" style="width:120px">
+                </div>
+              </div>
+              <div class="device-table-wrap">
+                <table class="table table-vcenter table-hover card-table mb-0">
+                  <thead>
+                    <tr>
+                      <th>Vehículo</th>
+                      <th>Dispositivo</th>
+                      <th>Estatus</th>
+                      <th style="width:20px"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="device-tbody">
+                    <tr>
+                      <td colspan="4" class="text-center text-muted py-4">
+                        <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /.row -->
+      </div>
+    </div>
+
+    <footer class="footer footer-transparent d-print-none">
+      <div class="container-xl">
+        <div class="row text-center align-items-center">
+          <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+            <ul class="list-inline list-inline-dots mb-0">
+              <li class="list-inline-item">FAHR Electronics Systems &copy; <span id="footer-year"></span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+</div><!-- /.page -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+  const API       = window.location.origin + BASE_PATH;
+  const params    = new URLSearchParams(window.location.search);
+  const CLIENT_ID = params.get('client_id');
+
+  const token = localStorage.getItem('token');
+  const user  = JSON.parse(localStorage.getItem('user') || 'null');
+  if (!token || !user) window.location.replace(BASE_PATH + '/login.html');
+  if (!CLIENT_ID)      window.location.replace(BASE_PATH + '/customers.html');
+
+  // Dark mode
+  (function() {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
+      document.body.classList.add('dark');
+    }
+  })();
+  function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    document.documentElement.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+    document.body.classList.toggle('dark', !isDark);
+    localStorage.setItem('darkMode', (!isDark).toString());
+  }
+  function doLogout() {
+    localStorage.removeItem('token'); localStorage.removeItem('user');
+    window.location.replace(BASE_PATH + '/login.html');
+  }
+
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+  document.getElementById('nav-vehicles-link').href  = BASE_PATH + '/vehicles.html';
+  if (user && (user.role === 'admin' || user.role === 'superuser')) {
+    document.getElementById('nav-settings-wrap').style.display = '';
+  }
+
+  const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
+  if (user) {
+    const color = roleColors[user.role] || '#206bc4';
+    document.getElementById('nav-avatar').textContent  = (user.name || user.username || '?')[0].toUpperCase();
+    document.getElementById('nav-avatar').style.background = color;
+    document.getElementById('nav-user-name').textContent   = user.name || user.username;
+    document.getElementById('nav-user-role').textContent   = user.role;
+  }
+
+  function authHdr() { return { Authorization: `Bearer ${token}` }; }
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ── State ─────────────────────────────────────────────────
+  let map, routePolyline;
+  const markers    = {};
+  let allDevices   = [];
+  let selectedImei = null;
+  let favorites    = new Set(JSON.parse(localStorage.getItem('fahr_favs') || '[]'));
+  const ONLINE_MS  = 5 * 60 * 1000;
+
+  function isOnline(last_seen) {
+    return last_seen && (Date.now() - new Date(last_seen).getTime()) < ONLINE_MS;
+  }
+  function formatDate(dt) {
+    if (!dt) return '—';
+    const d = new Date(dt), diff = Date.now() - d;
+    if (diff < 60000)    return 'Hace ' + Math.floor(diff/1000) + 's';
+    if (diff < 3600000)  return 'Hace ' + Math.floor(diff/60000) + 'm';
+    if (diff < 86400000) return 'Hace ' + Math.floor(diff/3600000) + 'h';
+    return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ── Map ───────────────────────────────────────────────────
+  function initMap() {
+    map = L.map('map').setView([23.6345, -102.5528], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(map);
+  }
+
+  function deviceIcon(online, selected) {
+    const color = selected ? '#d63939' : online ? '#2fb344' : '#94a3b8';
+    const size  = selected ? 20 : 14;
+    return L.divIcon({
+      html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.45)"></div>`,
+      className: '', iconSize: [size, size],
+      iconAnchor: [size/2, size/2], popupAnchor: [0, -(size/2) - 5]
+    });
+  }
+
+  function buildPopup(d) {
+    const online = isOnline(d.last_seen);
+    const ignOn  = d.ignition == 1;
+    return `
+      <div style="min-width:170px">
+        <div class="fw-bold">${escHtml(d.truck_name || 'Sin unidad')}</div>
+        <div class="text-muted font-monospace" style="font-size:.75em">${escHtml(d.imei)}</div>
+        <hr class="my-1">
+        <div>${online
+          ? '<span style="color:#2fb344">● En línea</span>'
+          : '<span style="color:#94a3b8">● Sin conexión</span>'}</div>
+        <div>${ignOn
+          ? '<span style="color:#2fb344"><i class="ti ti-power"></i> Motor encendido</span>'
+          : '<span style="color:#d63939"><i class="ti ti-power"></i> Motor apagado</span>'}</div>
+        ${d.last_speed !== null ? `<div>Velocidad: <b>${d.last_speed} km/h</b></div>` : ''}
+        ${d.last_satellites !== null ? `<div>Satélites: ${d.last_satellites}</div>` : ''}
+        <div class="text-muted mt-1" style="font-size:.78em">${formatDate(d.last_seen)}</div>
+      </div>`;
+  }
+
+  function updateMarkers() {
+    const active = new Set(allDevices.map(d => d.imei));
+    Object.keys(markers).forEach(imei => {
+      if (!active.has(imei)) { map.removeLayer(markers[imei]); delete markers[imei]; }
+    });
+
+    let placed = 0;
+    allDevices.forEach(d => {
+      if (!d.last_lat || !d.last_lng) return;
+      const online   = isOnline(d.last_seen);
+      const selected = d.imei === selectedImei;
+      if (markers[d.imei]) {
+        markers[d.imei].setLatLng([d.last_lat, d.last_lng]);
+        markers[d.imei].setIcon(deviceIcon(online, selected));
+        markers[d.imei].setPopupContent(buildPopup(d));
+      } else {
+        const m = L.marker([d.last_lat, d.last_lng], { icon: deviceIcon(online, selected) })
+          .addTo(map)
+          .bindPopup(buildPopup(d));
+        m.on('click', () => selectDevice(d.imei));
+        markers[d.imei] = m;
+      }
+      placed++;
+    });
+
+    if (!selectedImei && placed > 0) {
+      const group = L.featureGroup(Object.values(markers));
+      try { map.fitBounds(group.getBounds().pad(0.25)); } catch(e) {}
+    }
+  }
+
+  // ── Device table ──────────────────────────────────────────
+  function renderTable(devices) {
+    document.getElementById('device-count').textContent = devices.length + ' unidades';
+    const tbody = document.getElementById('device-tbody');
+
+    if (!devices.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">
+        <i class="ti ti-device-off" style="font-size:1.5rem"></i><br>Sin dispositivos asignados</td></tr>`;
+      return;
+    }
+
+    // Sort: favorites first, then online, then offline
+    const sorted = [...devices].sort((a, b) => {
+      const fa = favorites.has(a.imei) ? 0 : 1;
+      const fb = favorites.has(b.imei) ? 0 : 1;
+      if (fa !== fb) return fa - fb;
+      return isOnline(b.last_seen) - isOnline(a.last_seen);
+    });
+
+    tbody.innerHTML = sorted.map(d => {
+      const online   = isOnline(d.last_seen);
+      const ignOn    = d.ignition == 1;
+      const active   = d.imei === selectedImei ? ' active' : '';
+      const isFav    = favorites.has(d.imei);
+      const truckLbl = d.truck_name
+        ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
+        : `<span class="text-muted small">Sin unidad</span>`;
+
+      const wifiIcon = online
+        ? `<i class="ti ti-wifi text-success" title="En línea"></i>`
+        : `<i class="ti ti-wifi-off text-secondary" title="Desconectado"></i>`;
+      const ignIcon = ignOn
+        ? `<span class="badge bg-green-lt ms-1"><i class="ti ti-power me-1"></i>Encendido</span>`
+        : `<span class="badge bg-danger-lt ms-1"><i class="ti ti-power me-1"></i>Apagado</span>`;
+
+      return `<tr class="device-row${active}" onclick="selectDevice('${escHtml(d.imei)}')">
+        <td>${truckLbl}</td>
+        <td>
+          <div class="font-monospace" style="font-size:.78rem">${escHtml(d.imei)}</div>
+          <small class="text-muted">${formatDate(d.last_seen)}</small>
+        </td>
+        <td>
+          <div class="d-flex align-items-center gap-1 flex-wrap">
+            ${wifiIcon}${ignIcon}
+          </div>
+          ${d.last_speed !== null && d.last_speed !== undefined
+            ? `<small class="text-muted"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</small>` : ''}
+        </td>
+        <td onclick="event.stopPropagation()">
+          <button class="star-btn${isFav ? ' starred' : ''}" onclick="toggleFav('${escHtml(d.imei)}')" title="${isFav ? 'Quitar favorito' : 'Agregar favorito'}">
+            <i class="ti ti-star${isFav ? '-filled' : ''}"></i>
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterTable(q) {
+    if (!q.trim()) { renderTable(allDevices); return; }
+    const lower = q.toLowerCase();
+    renderTable(allDevices.filter(d =>
+      (d.imei        || '').toLowerCase().includes(lower) ||
+      (d.truck_name  || '').toLowerCase().includes(lower) ||
+      (d.truck_plate || '').toLowerCase().includes(lower)
+    ));
+  }
+
+  function toggleFav(imei) {
+    if (favorites.has(imei)) favorites.delete(imei);
+    else favorites.add(imei);
+    localStorage.setItem('fahr_favs', JSON.stringify([...favorites]));
+    renderTable(allDevices);
+  }
+
+  // ── Selection ─────────────────────────────────────────────
+  async function selectDevice(imei) {
+    selectedImei = imei;
+
+    // Update marker icons
+    allDevices.forEach(d => {
+      if (markers[d.imei]) markers[d.imei].setIcon(deviceIcon(isOnline(d.last_seen), d.imei === imei));
+    });
+
+    // Center on marker + open popup
+    if (markers[imei]) {
+      map.setView(markers[imei].getLatLng(), 15);
+      markers[imei].openPopup();
+    }
+
+    // Show route bar
+    const device = allDevices.find(d => d.imei === imei);
+    const label  = device ? (device.truck_name || device.imei) : imei;
+    document.getElementById('route-label').textContent = label;
+    document.getElementById('route-bar').style.display = 'flex';
+
+    // Re-render table to update active row
+    const q = document.getElementById('device-search').value;
+    filterTable(q);
+
+    // Load route
+    await loadRoute(imei);
+  }
+
+  async function loadRoute(imei) {
+    const hours = document.getElementById('route-hours').value;
+    if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+    try {
+      const res  = await fetch(`${API}/api/device/${encodeURIComponent(imei)}/route?hours=${hours}&limit=500`, { headers: authHdr() });
+      const data = await res.json();
+      if (data.success && data.route.length > 0) {
+        const coords = data.route.slice().reverse().map(p => [p.latitude, p.longitude]);
+        routePolyline = L.polyline(coords, { color: '#206bc4', weight: 3, opacity: .75 }).addTo(map);
+      }
+    } catch(e) {}
+  }
+
+  async function reloadRoute() {
+    if (selectedImei) await loadRoute(selectedImei);
+  }
+
+  function clearSelection() {
+    selectedImei = null;
+    if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+    document.getElementById('route-bar').style.display = 'none';
+    allDevices.forEach(d => {
+      if (markers[d.imei]) markers[d.imei].setIcon(deviceIcon(isOnline(d.last_seen), false));
+    });
+    const q = document.getElementById('device-search').value;
+    filterTable(q);
+    const ml = Object.values(markers);
+    if (ml.length) try { map.fitBounds(L.featureGroup(ml).getBounds().pad(0.25)); } catch(e) {}
+  }
+
+  // ── Data loading ──────────────────────────────────────────
+  async function loadData(initial = false) {
+    try {
+      const res  = await fetch(`${API}/api/devices/admin`, { headers: authHdr() });
+      if (res.status === 401) { doLogout(); return; }
+      const data = await res.json();
+      if (!data.success) return;
+
+      allDevices = data.devices.filter(d => String(d.client_id) === String(CLIENT_ID));
+      const q    = document.getElementById('device-search').value;
+      filterTable(q);
+      updateMarkers();
+
+      // If device was selected, refresh its route
+      if (selectedImei) await loadRoute(selectedImei);
+
+      setStatus(true);
+    } catch(e) {
+      setStatus(false);
+      if (initial) {
+        document.getElementById('device-tbody').innerHTML =
+          `<tr><td colspan="4" class="text-center text-danger py-4"><i class="ti ti-alert-triangle me-2"></i>Error de conexión</td></tr>`;
+      }
+    }
+  }
+
+  async function loadClientName() {
+    try {
+      const res  = await fetch(`${API}/api/clients`, { headers: authHdr() });
+      const data = await res.json();
+      if (data.success) {
+        const c = data.clients.find(c => String(c.id) === String(CLIENT_ID));
+        if (c) {
+          const name = c.name || c.business_name || 'Cliente';
+          document.title = name + ' — Monitor FAHR';
+          document.getElementById('nav-client-name').textContent  = name;
+          document.getElementById('page-client-name').textContent = name;
+        }
+      }
+    } catch(e) {}
+  }
+
+  function setStatus(online) {
+    document.getElementById('status-dot').className = 'status-dot ' + (online ? 'bg-success' : 'bg-danger');
+    document.getElementById('last-update-text').textContent = online
+      ? 'Actualizado ' + new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+      : 'Sin conexión';
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  initMap();
+  loadClientName();
+  loadData(true);
+  setInterval(() => loadData(false), 30000);
+</script>
+</body>
+</html>
