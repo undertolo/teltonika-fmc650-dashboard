@@ -1,5 +1,7 @@
 // app.js - Aplicación principal del dashboard
-const API_BASE_URL = window.location.origin;
+// Works when served from root (Node.js direct) or from /newdashboard/ (nginx)
+const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+const API_BASE_URL = window.location.origin + BASE_PATH;
 
 const app = {
   // Variables de estado
@@ -26,7 +28,7 @@ const app = {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     if (!token || !user) {
-      window.location.replace('/login.html');
+      window.location.replace(BASE_PATH + '/login.html');
       return false;
     }
     this.user = JSON.parse(user);
@@ -50,14 +52,14 @@ const app = {
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.replace('/login.html');
+    window.location.replace(BASE_PATH + '/login.html');
   },
 
   // Handle 401 from any API call
   handleUnauthorized() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.replace('/login.html');
+    window.location.replace(BASE_PATH + '/login.html');
   },
 
   // Dark mode
