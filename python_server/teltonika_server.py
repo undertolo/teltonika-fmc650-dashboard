@@ -24,7 +24,7 @@ except ImportError:
 
 # Configuración de logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(levelname)s - %(message)s',
     stream=sys.stdout
 )
@@ -399,40 +399,83 @@ class TeltonikaServer:
         finally:
             self.stop()
     
+    def recv_all(self, sock: socket.socket, length: int) -> Optional[bytes]:
+        """Receive exactly `length` bytes, handling fragmentation."""
+        buf = b''
+        while len(buf) < length:
+            chunk = sock.recv(length - len(buf))
+            if not chunk:
+                return None
+            buf += chunk
+        return buf
+
+    def recv_avl_packet(self, sock: socket.socket) -> Optional[bytes]:
+        """Read a complete AVL packet: preamble(4) + data_length(4) + payload + crc(4)."""
+        header = self.recv_all(sock, 8)
+        if not header:
+            return None
+        data_length = struct.unpack(">I", header[4:8])[0]
+        if data_length == 0 or data_length > 65536:
+            logger.warning(f"AVL data_length inválido: {data_length}")
+            return None
+        payload = self.recv_all(sock, data_length + 4)  # payload + CRC
+        if not payload:
+            return None
+        return header + payload
+
     def handle_client(self, client_socket: socket.socket, client_address: tuple):
         imei = None
         try:
+            client_socket.settimeout(60.0)  # 60s timeout on all recv calls
+
+            # Step 1: receive IMEI
             imei_data = client_socket.recv(1024)
             if not imei_data:
+                logger.warning(f"⚠️  {client_address}: conexión cerrada sin enviar IMEI")
                 return
-            
+
+            logger.debug(f"IMEI raw ({len(imei_data)} bytes): {imei_data.hex()}")
             imei = self.parser.parse_imei(imei_data)
-            
+
             if imei:
                 client_socket.send(b'\x01')
                 logger.info(f"✅ IMEI aceptado: {imei}")
             else:
+                logger.warning(f"⚠️  {client_address}: IMEI inválido, rechazando")
                 client_socket.send(b'\x00')
                 return
-            
+
+            # Step 2: receive AVL data packets
             while self.running:
-                data = client_socket.recv(4096)
-                if not data:
+                try:
+                    packet = self.recv_avl_packet(client_socket)
+                except socket.timeout:
+                    logger.info(f"⏱️  Timeout esperando datos de {imei} {client_address}")
                     break
-                
-                parsed_data = self.parser.parse_avl_data(data)
-                
-                if parsed_data and self.db:
-                    client_addr_str = f"{client_address[0]}:{client_address[1]}"
-                    self.db.save_gps_data(imei, parsed_data, client_addr_str)
-                    
+
+                if not packet:
+                    logger.info(f"📴 {imei}: dispositivo cerró conexión")
+                    break
+
+                logger.debug(f"Paquete recibido ({len(packet)} bytes): {packet[:16].hex()}...")
+                parsed_data = self.parser.parse_avl_data(packet)
+
+                if parsed_data:
+                    if self.db:
+                        client_addr_str = f"{client_address[0]}:{client_address[1]}"
+                        self.db.save_gps_data(imei, parsed_data, client_addr_str)
+
                     num_records = parsed_data['num_records']
                     ack = struct.pack(">I", num_records)
                     client_socket.send(ack)
-                    logger.info(f"📤 ACK enviado: {num_records} registros")
-        
+                    logger.info(f"📤 ACK enviado: {num_records} registros de {imei}")
+                else:
+                    logger.error(f"❌ No se pudo parsear paquete de {imei}")
+
+        except socket.timeout:
+            logger.warning(f"⏱️  Timeout en handshake IMEI desde {client_address}")
         except Exception as e:
-            logger.error(f"Error con cliente {client_address}: {e}")
+            logger.error(f"Error con cliente {client_address} (IMEI: {imei}): {e}", exc_info=True)
         finally:
             client_socket.close()
             logger.info(f"🔌 Conexión cerrada: {client_address} (IMEI: {imei})")
