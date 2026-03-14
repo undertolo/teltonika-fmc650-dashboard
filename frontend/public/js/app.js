@@ -677,6 +677,92 @@ const app = {
     }
   },
 
+  // ==================== TABS ====================
+
+  switchTab(tab) {
+    const mapPanel     = document.getElementById('map-panel');
+    const devicesPanel = document.getElementById('devices-panel');
+    const tabMap       = document.getElementById('tab-map');
+    const tabDevices   = document.getElementById('tab-devices');
+
+    if (tab === 'map') {
+      mapPanel.style.display = '';
+      devicesPanel.style.display = 'none';
+      tabMap.classList.add('active');
+      tabDevices.classList.remove('active');
+      // Invalidate map size in case it was hidden
+      if (this.map) setTimeout(() => this.map.invalidateSize(), 50);
+    } else {
+      mapPanel.style.display = 'none';
+      devicesPanel.style.display = '';
+      tabMap.classList.remove('active');
+      tabDevices.classList.add('active');
+      this.loadDevicesTable();
+    }
+  },
+
+  allDevicesData: [],
+
+  async loadDevicesTable() {
+    const tbody = document.getElementById('devices-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Loading...</td></tr>';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/devices`, { headers: this.authHeaders() });
+      if (res.status === 401) { this.handleUnauthorized(); return; }
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      this.allDevicesData = data.devices;
+      this.renderDevicesTable(data.devices);
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" class="table-empty" style="color:#d63939">${e.message}</td></tr>`;
+    }
+  },
+
+  renderDevicesTable(devices) {
+    const tbody = document.getElementById('devices-tbody');
+    if (!devices.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="table-empty">No devices found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = devices.map(d => {
+      const online = this.isDeviceOnline(d.last_seen);
+      const statusHtml = online
+        ? '<span class="status-pill online"><span class="dot"></span>Online</span>'
+        : '<span class="status-pill offline"><span class="dot"></span>Offline</span>';
+      const truck  = d.truck_name  ? this.escHtml(d.truck_name)  : '<span style="color:var(--text-light)">—</span>';
+      const plate  = d.truck_plate ? this.escHtml(d.truck_plate) : '<span style="color:var(--text-light)">—</span>';
+      return `<tr>
+        <td>${statusHtml}</td>
+        <td style="font-family:monospace;font-size:0.8rem">${this.escHtml(d.imei)}</td>
+        <td>${truck}</td>
+        <td>${plate}</td>
+        <td>${this.formatDate(d.last_seen)}</td>
+        <td>${(d.total_records || 0).toLocaleString()}</td>
+        <td><button class="btn-map-link" onclick="app.goToDeviceMap('${this.escHtml(d.imei)}')">📍 Map</button></td>
+      </tr>`;
+    }).join('');
+  },
+
+  filterDevicesTable(q) {
+    if (!q.trim()) { this.renderDevicesTable(this.allDevicesData); return; }
+    const lower = q.toLowerCase();
+    const filtered = this.allDevicesData.filter(d =>
+      (d.imei        || '').toLowerCase().includes(lower) ||
+      (d.truck_name  || '').toLowerCase().includes(lower) ||
+      (d.truck_plate || '').toLowerCase().includes(lower)
+    );
+    this.renderDevicesTable(filtered);
+  },
+
+  goToDeviceMap(imei) {
+    this.switchTab('map');
+    this.selectDevice(imei);
+  },
+
+  escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  },
+
   // Reset map to show all devices
   showAllDevices() {
     this.selectedDevice = null;

@@ -20,7 +20,46 @@
         </div>
     </header>
 
-    <div class="container">
+    <!-- Top navigation -->
+    <nav class="top-nav">
+        <button class="nav-tab active" id="tab-map" onclick="app.switchTab('map')">🗺 Map</button>
+        <button class="nav-tab" id="tab-devices" onclick="app.switchTab('devices')">📋 Devices</button>
+    </nav>
+
+    <!-- Devices panel -->
+    <div id="devices-panel" style="display:none">
+        <div class="container">
+            <div class="card devices-card">
+                <div class="devices-card-header">
+                    <h2>All FMC650 Devices</h2>
+                    <div style="display:flex;gap:0.75rem;align-items:center">
+                        <input type="search" id="devices-search" class="devices-search" placeholder="Search IMEI, truck, customer..." oninput="app.filterDevicesTable(this.value)">
+                        <button class="refresh-btn" onclick="app.loadDevicesTable()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="devices-table" id="devices-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>IMEI</th>
+                                <th>Truck</th>
+                                <th>Plate</th>
+                                <th>Last Seen</th>
+                                <th>Records</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="devices-tbody">
+                            <tr><td colspan="7" class="table-empty">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="map-panel">
         <div class="grid">
             <!-- Sidebar con lista de dispositivos -->
             <aside class="sidebar">
@@ -72,7 +111,7 @@
                 <div class="stat-label">Registros Totales</div>
             </div>
         </div>
-    </div>
+    </div><!-- /#map-panel -->
 
     <!-- User Management Modal -->
     <div id="users-modal" class="modal-overlay" style="display:none" onclick="app.closeUserPanel(event)">
