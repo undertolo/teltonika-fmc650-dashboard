@@ -20,6 +20,17 @@
     --shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+body.dark {
+    --primary-color: #1a1a2e;
+    --secondary-color: #4fa3e0;
+    --bg-color: #0f0f1a;
+    --card-bg: #1e1e2e;
+    --text-color: #e0e0e0;
+    --text-light: #999;
+    --border-color: #333;
+    --shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     background: var(--bg-color);
@@ -48,6 +59,21 @@ h1 {
     align-items: center;
     gap: 1rem;
     font-size: 0.9rem;
+}
+
+.dark-mode-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.dark-mode-btn:hover {
+    background: rgba(255,255,255,0.25);
 }
 
 .status-badge {

@@ -12,10 +12,25 @@ const app = {
 
   // Inicialización
   async init() {
+    this.initDarkMode();
     this.initMap();
     await this.loadDevices();
     this.startAutoRefresh();
     this.updateServerStatus();
+  },
+
+  // Dark mode
+  initDarkMode() {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark');
+      document.querySelector('.dark-mode-btn').textContent = '☀️';
+    }
+  },
+
+  toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark');
+    document.querySelector('.dark-mode-btn').textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDark);
   },
 
   // Inicializar mapa
