@@ -3,29 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trucks — Fleet Management</title>
+  <title>Vehículos — FAHR Electronic Systems</title>
+  <link rel="stylesheet" href="css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="css/styles.css">
   <style>
     body { background: var(--bg-color); }
-    .page-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
-
-    .navbar {
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border-color);
-      padding: 0 1.5rem;
-      height: 3.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky; top: 0; z-index: 100;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
-    .navbar-brand { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; font-weight: 600; color: var(--text-color); text-decoration: none; }
-    .navbar-actions { display: flex; align-items: center; gap: 0.75rem; }
-    .user-badge { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-light); }
-    .role-pill { padding: 0.15rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
-    .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-light); font-size: 1rem; padding: 0.35rem; border-radius: var(--radius); transition: background 0.15s; }
-    .btn-icon:hover { background: var(--bg-color); color: var(--text-color); }
+    .page-wrapper-custom { display: flex; flex-direction: column; min-height: calc(100vh - 112px); }
 
     .page-header { background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
     .page-header-left { display: flex; align-items: center; gap: 0.75rem; }
@@ -100,21 +84,100 @@
   </style>
 </head>
 <body>
-<div class="page-wrapper">
+<div class="page">
 
-  <!-- Navbar -->
-  <nav class="navbar">
-    <a href="#" class="navbar-brand">📡 Fleet Management</a>
-    <div class="navbar-actions">
-      <div class="user-badge">
-        <span id="nav-user-name"></span>
-        <span id="nav-role-pill" class="role-pill"></span>
+  <!-- ── Top header (app-header) ─────────────────────────── -->
+  <header class="navbar navbar-expand-md navbar-light d-print-none">
+    <div class="container-xl">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <h1 class="navbar-brand navbar-brand-autodark pe-0 pe-md-3 mb-0">
+        <a href="customers.html" class="d-flex align-items-center text-decoration-none">
+          <img src="img/logo-small.svg" class="hide-theme-dark" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <img src="img/logo-small-white.svg" class="hide-theme-light" alt="FAHR" style="height:30px" onerror="this.style.display='none'">
+          <span class="ms-2" style="font-size:1rem;font-weight:600">FAHR <span class="d-none d-lg-inline-block">Electronic Systems</span></span>
+        </a>
+      </h1>
+      <div class="navbar-nav flex-row order-md-last ms-auto align-items-center">
+        <div class="d-none d-md-flex me-2 align-items-center">
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-dark" onclick="toggleDarkMode()" title="Activar modo oscuro">
+            <i class="icon ti ti-moon"></i>
+          </a>
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-light" onclick="toggleDarkMode()" title="Activar modo claro">
+            <i class="icon ti ti-brightness-up"></i>
+          </a>
+        </div>
+        <div class="nav-item dropdown">
+          <a href="javascript:void(0)" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="avatar avatar-sm" id="nav-avatar">U</span>
+            <div class="d-none d-sm-block ps-2">
+              <div id="nav-user-name" class="lh-1" style="font-size:.875rem;font-weight:500"></div>
+              <div id="nav-user-role" class="mt-1 small text-muted"></div>
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a href="javascript:void(0)" class="dropdown-item d-md-none" onclick="toggleDarkMode()">
+              <i class="ti ti-moon me-2 hide-theme-dark"></i>
+              <i class="ti ti-brightness-up me-2 hide-theme-light"></i>
+              Cambiar tema
+            </a>
+            <div class="dropdown-divider d-md-none"></div>
+            <a href="javascript:void(0)" class="dropdown-item text-danger" onclick="doLogout()">
+              <i class="ti ti-logout me-2"></i>Cerrar sesión
+            </a>
+          </div>
+        </div>
       </div>
-      <button class="btn-icon" onclick="toggleDarkMode()" id="dark-btn" title="Toggle dark mode">🌙</button>
-      <button class="btn-icon" onclick="doLogout()" title="Logout" style="color:#d63939">⏻</button>
     </div>
-  </nav>
+  </header>
 
+  <!-- ── Secondary menu (app-menu) ──────────────────────── -->
+  <div class="navbar-expand-md">
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <div class="navbar navbar-light">
+        <div class="container-xl">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" id="nav-monitor-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop"></i></span>
+                <span class="nav-link-title">Monitor</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="customers.html">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-users"></i></span>
+                <span class="nav-link-title">Clientes</span>
+              </a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" id="nav-trucks-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-truck"></i></span>
+                <span class="nav-link-title">Vehículos</span>
+              </a>
+            </li>
+          </ul>
+          <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-md-last" id="nav-settings-wrap" style="display:none">
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link" data-bs-toggle="dropdown">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-settings"></i></span>
+                  <span class="nav-link-title">Configuración</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                  <a href="#" class="dropdown-item" id="nav-settings-link">
+                    <i class="ti ti-users me-2"></i>Administrar Usuarios
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="page-wrapper-custom">
   <!-- Page header -->
   <div class="page-header">
     <div class="page-header-left">
@@ -142,8 +205,10 @@
     </div>
   </div>
 
-</div>
+</div><!-- /.page-wrapper-custom -->
+</div><!-- /.page -->
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- Truck form modal -->
 <div class="modal-overlay" id="truck-modal" style="display:none" onclick="closeModalOnOverlay(event,'truck-modal')">
   <div class="modal" onclick="event.stopPropagation()">
@@ -209,17 +274,16 @@
   const clientId = params.get('client_id');
   if (!clientId) window.location.replace(BASE_PATH + '/customers.html');
 
-  // Dark mode
+  // Dark mode (Tabler data-bs-theme)
   (function() {
     if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark');
-      document.getElementById('dark-btn').textContent = '☀️';
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
     }
   })();
   function toggleDarkMode() {
-    const isDark = document.body.classList.toggle('dark');
-    document.getElementById('dark-btn').textContent = isDark ? '☀️' : '🌙';
-    localStorage.setItem('darkMode', isDark);
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    document.documentElement.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('darkMode', (!isDark).toString());
   }
   function doLogout() {
     localStorage.removeItem('token');
@@ -227,13 +291,23 @@
     window.location.replace(BASE_PATH + '/login.html');
   }
 
-  // User info
+  // Navbar links
+  document.getElementById('nav-monitor-link').href = BASE_PATH + '/';
+  document.getElementById('nav-trucks-link').href = BASE_PATH + '/trucks.html?client_id=' + clientId;
+
+  // User info in Tabler navbar
   const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
-  document.getElementById('nav-user-name').textContent = user.name || user.username;
-  const pill = document.getElementById('nav-role-pill');
-  pill.textContent = user.role;
-  pill.style.background = (roleColors[user.role] || '#206bc4') + '22';
-  pill.style.color = roleColors[user.role] || '#206bc4';
+  if (user) {
+    const color = roleColors[user.role] || '#206bc4';
+    document.getElementById('nav-avatar').textContent = (user.name || user.username || '?')[0].toUpperCase();
+    document.getElementById('nav-avatar').style.background = color;
+    document.getElementById('nav-user-name').textContent = user.name || user.username;
+    document.getElementById('nav-user-role').textContent = user.role;
+    if (user.role === 'superuser') {
+      document.getElementById('nav-settings-wrap').style.display = '';
+      document.getElementById('nav-settings-link').href = BASE_PATH + '/';
+    }
+  }
 
   // State
   let allTrucks = [];

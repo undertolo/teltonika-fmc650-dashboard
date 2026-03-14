@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clientes — Fleet Management</title>
+  <title>Clientes — FAHR Electronic Systems</title>
   <link rel="stylesheet" href="css/tabler.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <style>
-    .card-link { cursor: pointer; transition: box-shadow 0.15s; }
-    .card-link:hover { box-shadow: var(--tblr-shadow-card-hover); text-decoration: none; }
     .avatar-initials {
       width: 2rem; height: 2rem; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
@@ -17,148 +15,147 @@
     .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
     .status-dot.active   { background: var(--tblr-success); }
     .status-dot.inactive { background: var(--tblr-danger); }
-    .status-dot.other    { background: var(--tblr-secondary); }
-    .skeleton-card { min-height: 120px; }
-    .navbar-brand-image { height: 2rem; }
+    .status-dot.other    { background: var(--tblr-muted); }
+    .card-link { cursor: pointer; transition: box-shadow 0.15s; }
+    .card-link:hover { box-shadow: var(--tblr-shadow-card-hover); }
   </style>
 </head>
-<body class="antialiased">
+<body>
 <div class="page">
 
-  <!-- Sidebar -->
-  <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
-    <div class="container-fluid">
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu">
+  <!-- ── Top header (app-header) ───────────────────────────── -->
+  <header class="navbar navbar-expand-md navbar-light d-print-none">
+    <div class="container-xl">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <h1 class="navbar-brand navbar-brand-autodark">
-        <a href="#">
-          <img src="img/logo.svg" class="navbar-brand-image" alt="FAHR Electronics"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
-          <span style="display:none;font-size:1rem;font-weight:700;">📡 Fleet</span>
+      <h1 class="navbar-brand navbar-brand-autodark pe-0 pe-md-3 mb-0">
+        <a href="customers.html" class="d-flex align-items-center text-decoration-none">
+          <img src="img/logo-small.svg" class="hide-theme-dark" alt="FAHR" style="height:30px"
+               onerror="this.style.display='none'">
+          <img src="img/logo-small-white.svg" class="hide-theme-light" alt="FAHR" style="height:30px"
+               onerror="this.style.display='none'">
+          <span class="ms-2" style="font-size:1rem;font-weight:600">FAHR <span class="d-none d-lg-inline-block">Electronic Systems</span></span>
         </a>
       </h1>
-      <div class="collapse navbar-collapse" id="sidebar-menu">
-        <ul class="navbar-nav pt-lg-3">
-          <li class="nav-item">
-            <a class="nav-link active" href="#">
-              <span class="nav-link-icon d-md-none d-lg-inline-block">
-                <i class="ti ti-users"></i>
-              </span>
-              <span class="nav-link-title">Clientes</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="nav-map-link" href="#">
-              <span class="nav-link-icon d-md-none d-lg-inline-block">
-                <i class="ti ti-map-2"></i>
-              </span>
-              <span class="nav-link-title">Mapa</span>
-            </a>
-          </li>
-        </ul>
-        <div class="mt-auto">
-          <div class="py-3 px-3 border-top border-top-light">
-            <div class="d-flex align-items-center mb-2">
-              <div class="me-2">
-                <span class="avatar avatar-sm" id="sidebar-avatar" style="background:#206bc4">S</span>
-              </div>
-              <div>
-                <div class="fw-medium text-white" id="sidebar-name" style="font-size:.875rem;"></div>
-                <div id="sidebar-role" style="font-size:.75rem;opacity:.6;color:#fff;text-transform:uppercase;letter-spacing:.05em;"></div>
-              </div>
+      <div class="navbar-nav flex-row order-md-last ms-auto align-items-center">
+        <div class="d-none d-md-flex me-2 align-items-center">
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-dark" onclick="toggleDarkMode()" title="Activar modo oscuro">
+            <i class="icon ti ti-moon"></i>
+          </a>
+          <a href="javascript:void(0)" class="nav-link px-0 hide-theme-light" onclick="toggleDarkMode()" title="Activar modo claro">
+            <i class="icon ti ti-brightness-up"></i>
+          </a>
+        </div>
+        <div class="nav-item dropdown">
+          <a href="javascript:void(0)" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="avatar avatar-sm" id="nav-avatar">U</span>
+            <div class="d-none d-sm-block ps-2">
+              <div id="nav-user-name" class="lh-1" style="font-size:.875rem;font-weight:500"></div>
+              <div id="nav-user-role" class="mt-1 small text-muted"></div>
             </div>
-            <button class="btn btn-sm w-100 mt-1" style="background:rgba(255,255,255,.1);color:#fff;border:none;"
-                    onclick="doLogout()">
-              <i class="ti ti-logout me-1"></i> Cerrar sesión
-            </button>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end">
+            <a href="javascript:void(0)" class="dropdown-item d-md-none" onclick="toggleDarkMode()">
+              <i class="ti ti-moon me-2 hide-theme-dark"></i>
+              <i class="ti ti-brightness-up me-2 hide-theme-light"></i>
+              Cambiar tema
+            </a>
+            <div class="dropdown-divider d-md-none"></div>
+            <a href="javascript:void(0)" class="dropdown-item text-danger" onclick="doLogout()">
+              <i class="ti ti-logout me-2"></i>Cerrar sesión
+            </a>
           </div>
         </div>
       </div>
     </div>
-  </aside>
+  </header>
 
-  <!-- Page wrapper -->
-  <div class="page-wrapper">
-
-    <!-- Top navbar -->
-    <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none">
-      <div class="container-xl">
-        <div class="me-3 d-flex">
-          <input type="search" id="search-input" class="form-control form-control-sm"
-                 placeholder="Buscar clientes..." oninput="filterClients(this.value)"
-                 style="width:240px;">
-        </div>
-        <div class="ms-auto d-flex align-items-center gap-2">
-          <span id="count-badge" class="badge bg-secondary-subtle text-secondary"></span>
+  <!-- ── Secondary menu (app-menu) ────────────────────────── -->
+  <div class="navbar-expand-md">
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <div class="navbar navbar-light">
+        <div class="container-xl">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" id="nav-monitor-link" href="#">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-device-desktop"></i></span>
+                <span class="nav-link-title">Monitor</span>
+              </a>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="customers.html">
+                <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-users"></i></span>
+                <span class="nav-link-title">Clientes</span>
+              </a>
+            </li>
+          </ul>
+          <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-md-last" id="nav-settings-wrap" style="display:none">
+            <ul class="navbar-nav">
+              <li class="nav-item dropdown">
+                <a href="javascript:void(0)" class="nav-link" data-bs-toggle="dropdown">
+                  <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-settings"></i></span>
+                  <span class="nav-link-title">Configuración</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                  <a href="javascript:void(0)" class="dropdown-item" id="nav-settings-link">
+                    <i class="ti ti-users me-2"></i>Administrar Usuarios
+                  </a>
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
-    </header>
+    </div>
+  </div>
 
-    <!-- Page body -->
+  <!-- ── Page wrapper ──────────────────────────────────────── -->
+  <div class="page-wrapper">
     <div class="page-body">
       <div class="container-xl">
 
-        <!-- Page header -->
         <div class="page-header d-print-none">
           <div class="row align-items-center">
             <div class="col">
               <h2 class="page-title">Clientes Recientes</h2>
               <div class="text-muted mt-1">Selecciona un cliente para gestionar sus unidades y dispositivos</div>
             </div>
-            <div class="col-auto ms-auto d-print-none d-lg-none">
-              <input type="search" id="search-input-mobile" class="form-control form-control-sm"
-                     placeholder="Buscar..." oninput="filterClients(this.value)"
-                     style="width:180px;">
+            <div class="col-auto ms-auto d-print-none">
+              <div class="d-flex gap-2 align-items-center">
+                <span id="count-badge" class="badge bg-secondary-subtle text-secondary"></span>
+                <input type="search" id="search-input" class="form-control form-control-sm"
+                       placeholder="Buscar clientes..." oninput="filterClients(this.value)"
+                       style="width:220px;">
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Clients grid -->
         <div class="row row-deck row-cards" id="clients-grid">
-          <!-- skeleton loading -->
+          <!-- skeleton -->
           <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
-            <div class="card skeleton-card placeholder-glow">
-              <div class="card-body">
-                <div class="placeholder col-8 mb-2"></div>
-                <div class="placeholder col-5"></div>
-              </div>
-              <div class="card-footer p-2">
-                <div class="placeholder col-4"></div>
-              </div>
+            <div class="card placeholder-glow" style="min-height:110px">
+              <div class="card-body"><div class="placeholder col-8 mb-2"></div><div class="placeholder col-5"></div></div>
+              <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
             </div>
           </div>
           <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
-            <div class="card skeleton-card placeholder-glow">
-              <div class="card-body">
-                <div class="placeholder col-7 mb-2"></div>
-                <div class="placeholder col-4"></div>
-              </div>
-              <div class="card-footer p-2">
-                <div class="placeholder col-4"></div>
-              </div>
+            <div class="card placeholder-glow" style="min-height:110px">
+              <div class="card-body"><div class="placeholder col-7 mb-2"></div><div class="placeholder col-4"></div></div>
+              <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
             </div>
           </div>
           <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
-            <div class="card skeleton-card placeholder-glow">
-              <div class="card-body">
-                <div class="placeholder col-9 mb-2"></div>
-                <div class="placeholder col-6"></div>
-              </div>
-              <div class="card-footer p-2">
-                <div class="placeholder col-4"></div>
-              </div>
+            <div class="card placeholder-glow" style="min-height:110px">
+              <div class="card-body"><div class="placeholder col-9 mb-2"></div><div class="placeholder col-6"></div></div>
+              <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
             </div>
           </div>
           <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
-            <div class="card skeleton-card placeholder-glow">
-              <div class="card-body">
-                <div class="placeholder col-6 mb-2"></div>
-                <div class="placeholder col-3"></div>
-              </div>
-              <div class="card-footer p-2">
-                <div class="placeholder col-4"></div>
-              </div>
+            <div class="card placeholder-glow" style="min-height:110px">
+              <div class="card-body"><div class="placeholder col-6 mb-2"></div><div class="placeholder col-3"></div></div>
+              <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
             </div>
           </div>
         </div>
@@ -166,7 +163,6 @@
       </div>
     </div>
 
-    <!-- Footer -->
     <footer class="footer footer-transparent d-print-none">
       <div class="container-xl">
         <div class="row text-center align-items-center">
@@ -178,10 +174,10 @@
         </div>
       </div>
     </footer>
-
   </div><!-- /.page-wrapper -->
 </div><!-- /.page -->
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
   const API = window.location.origin + BASE_PATH;
@@ -191,29 +187,40 @@
   if (!token || !user) window.location.replace(BASE_PATH + '/login.html');
   if (user && user.role !== 'admin' && user.role !== 'superuser') window.location.replace(BASE_PATH + '/');
 
-  // Nav map link
-  document.getElementById('nav-map-link').href = BASE_PATH + '/';
-
-  // Footer year
-  document.getElementById('footer-year').textContent = new Date().getFullYear();
-
-  // Sidebar user info
-  const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
-  const sidebarName = document.getElementById('sidebar-name');
-  const sidebarRole = document.getElementById('sidebar-role');
-  const sidebarAvatar = document.getElementById('sidebar-avatar');
-  if (user) {
-    sidebarName.textContent = user.name || user.username;
-    sidebarRole.textContent = user.role;
-    const initials = (user.name || user.username || '?')[0].toUpperCase();
-    sidebarAvatar.textContent = initials;
-    sidebarAvatar.style.background = roleColors[user.role] || '#206bc4';
+  // Dark mode (Tabler approach via data-bs-theme on <html>)
+  (function() {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
+    }
+  })();
+  function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    document.documentElement.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('darkMode', (!isDark).toString());
   }
-
   function doLogout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.replace(BASE_PATH + '/login.html');
+  }
+
+  // Nav links
+  document.getElementById('nav-monitor-link').href = BASE_PATH + '/';
+
+  // User info in header
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
+  const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
+  if (user) {
+    const color = roleColors[user.role] || '#206bc4';
+    const initial = (user.name || user.username || '?')[0].toUpperCase();
+    document.getElementById('nav-avatar').textContent = initial;
+    document.getElementById('nav-avatar').style.background = color;
+    document.getElementById('nav-user-name').textContent = user.name || user.username;
+    document.getElementById('nav-user-role').textContent = user.role;
+    if (user.role === 'superuser') {
+      document.getElementById('nav-settings-wrap').style.display = '';
+      document.getElementById('nav-settings-link').href = BASE_PATH + '/';
+    }
   }
 
   let allClients = [];
@@ -239,67 +246,41 @@
 
   function renderClients(clients) {
     const grid = document.getElementById('clients-grid');
-    const badge = document.getElementById('count-badge');
-    badge.textContent = clients.length + ' clientes';
+    document.getElementById('count-badge').textContent = clients.length + ' clientes';
 
     if (!clients.length) {
-      grid.innerHTML = `
-        <div class="col-12">
-          <div class="card">
-            <div class="empty">
-              <div class="empty-icon"><i class="ti ti-search" style="font-size:3rem;"></i></div>
-              <p class="empty-title">Sin resultados</p>
-              <p class="empty-subtitle text-muted">No se encontraron clientes con ese criterio.</p>
-            </div>
-          </div>
-        </div>`;
+      grid.innerHTML = `<div class="col-12"><div class="card"><div class="empty">
+        <div class="empty-icon"><i class="ti ti-search" style="font-size:3rem"></i></div>
+        <p class="empty-title">Sin resultados</p>
+        <p class="empty-subtitle text-muted">No se encontraron clientes con ese criterio.</p>
+      </div></div></div>`;
       return;
     }
 
-    const statusClass = s => {
-      const v = (s || '').toLowerCase();
-      return (v === 'active' || v === 'valid') ? 'active' : (v === 'inactive' || v === 'invalid') ? 'inactive' : 'other';
-    };
-    const statusLabel = s => {
-      const v = (s || '').toLowerCase();
-      return (v === 'active' || v === 'valid') ? 'Activo' : (v === 'inactive' || v === 'invalid') ? 'Inactivo' : (s || '—');
-    };
+    const statusClass = s => { const v=(s||'').toLowerCase(); return (v==='active'||v==='valid')?'active':(v==='inactive'||v==='invalid')?'inactive':'other'; };
+    const statusLabel = s => { const v=(s||'').toLowerCase(); return (v==='active'||v==='valid')?'Activo':(v==='inactive'||v==='invalid')?'Inactivo':(s||'—'); };
 
     grid.innerHTML = clients.map(c => {
       const initial = (c.name || '?')[0].toUpperCase();
-      const sub = c.business_name && c.business_name !== c.name
-        ? escHtml(c.business_name)
-        : (c.phone_number ? escHtml(c.phone_number) : '');
+      const sub = c.business_name && c.business_name !== c.name ? escHtml(c.business_name) : (c.phone_number ? escHtml(c.phone_number) : '');
       const sc = statusClass(c.status);
-
       return `
         <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
           <div class="card card-link" onclick="viewClient(${c.id})">
             <div class="card-body">
               <div class="d-flex align-items-center mb-2">
                 <span class="avatar-initials me-2" style="background:${avatarColor(c.id)}">${escHtml(initial)}</span>
-                <div class="flex-fill" style="min-width:0;">
-                  <div class="fw-bold text-truncate" style="font-size:.9rem;">${escHtml(c.name || '—')}</div>
-                  ${sub ? `<div class="text-muted text-truncate" style="font-size:.78rem;">${sub}</div>` : ''}
+                <div class="flex-fill" style="min-width:0">
+                  <div class="fw-bold text-truncate" style="font-size:.9rem">${escHtml(c.name||'—')}</div>
+                  ${sub ? `<div class="text-muted text-truncate" style="font-size:.78rem">${sub}</div>` : ''}
                 </div>
               </div>
-              <div>
-                <span class="status-dot ${sc}"></span>
-                <small class="text-muted">${statusLabel(c.status)}</small>
-              </div>
+              <div><span class="status-dot ${sc}"></span><small class="text-muted">${statusLabel(c.status)}</small></div>
             </div>
             <div class="card-footer p-2">
-              <div class="row g-2">
-                <div class="col-auto">
-                  <span class="badge bg-orange-lt">
-                    <i class="ti ti-truck me-1"></i>${c.truck_count} unidad${c.truck_count !== 1 ? 'es' : ''}
-                  </span>
-                </div>
-                <div class="col-auto">
-                  <span class="badge bg-blue-lt">
-                    <i class="ti ti-router me-1"></i>${c.device_count} disp.
-                  </span>
-                </div>
+              <div class="row g-1">
+                <div class="col-auto"><span class="badge bg-orange-lt"><i class="ti ti-truck me-1"></i>${c.truck_count} unidad${c.truck_count!==1?'es':''}</span></div>
+                <div class="col-auto"><span class="badge bg-blue-lt"><i class="ti ti-router me-1"></i>${c.device_count} disp.</span></div>
               </div>
             </div>
           </div>
@@ -308,40 +289,25 @@
   }
 
   function filterClients(q) {
-    // Sync both search inputs
-    document.getElementById('search-input').value = q;
-    if (document.getElementById('search-input-mobile')) {
-      document.getElementById('search-input-mobile').value = q;
-    }
     if (!q.trim()) { renderClients(allClients); return; }
     const lower = q.toLowerCase();
     renderClients(allClients.filter(c =>
-      (c.name          || '').toLowerCase().includes(lower) ||
-      (c.business_name || '').toLowerCase().includes(lower) ||
-      (c.phone_number  || '').toLowerCase().includes(lower)
+      (c.name||'').toLowerCase().includes(lower) ||
+      (c.business_name||'').toLowerCase().includes(lower) ||
+      (c.phone_number||'').toLowerCase().includes(lower)
     ));
   }
 
-  function viewClient(id) {
-    window.location.href = BASE_PATH + '/trucks.html?client_id=' + id;
-  }
+  function viewClient(id) { window.location.href = BASE_PATH + '/trucks.html?client_id=' + id; }
 
   function showError(msg) {
-    document.getElementById('clients-grid').innerHTML = `
-      <div class="col-12">
-        <div class="card">
-          <div class="empty">
-            <div class="empty-icon text-danger"><i class="ti ti-alert-triangle" style="font-size:3rem;"></i></div>
-            <p class="empty-title">Error</p>
-            <p class="empty-subtitle text-danger">${escHtml(msg)}</p>
-          </div>
-        </div>
-      </div>`;
+    document.getElementById('clients-grid').innerHTML = `<div class="col-12"><div class="card"><div class="empty">
+      <div class="empty-icon text-danger"><i class="ti ti-alert-triangle" style="font-size:3rem"></i></div>
+      <p class="empty-title">Error</p><p class="empty-subtitle text-danger">${escHtml(msg)}</p>
+    </div></div></div>`;
   }
 
-  function escHtml(str) {
-    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   loadClients();
 </script>

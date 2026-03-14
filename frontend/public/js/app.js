@@ -92,31 +92,24 @@ const app = {
   },
 
   showBackToTrucks(clientId) {
-    const headerInfo = document.querySelector('.header-info');
-    if (!headerInfo || document.getElementById('back-btn')) return;
-    const btn = document.createElement('a');
-    btn.id = 'back-btn';
-    btn.href = BASE_PATH + '/trucks.html?client_id=' + clientId;
-    btn.className = 'logout-btn';
-    btn.title = 'Back to Trucks';
-    btn.style.textDecoration = 'none';
-    btn.textContent = '← Trucks';
-    headerInfo.insertBefore(btn, headerInfo.firstChild);
+    // Show Vehículos nav link in Tabler secondary menu
+    const trucksItem = document.getElementById('nav-item-trucks');
+    const trucksLink = document.getElementById('nav-trucks-link');
+    if (trucksItem) trucksItem.style.display = '';
+    if (trucksLink) trucksLink.href = BASE_PATH + '/trucks.html?client_id=' + clientId;
+    // Also show Clientes link
+    const clientsItem = document.getElementById('nav-item-clients');
+    if (clientsItem) clientsItem.style.display = '';
   },
 
   showBackToCustomers() {
-    const headerInfo = document.querySelector('.header-info');
-    if (!headerInfo) return;
-    const existing = document.getElementById('back-btn');
-    if (existing) return;
-    const btn = document.createElement('a');
-    btn.id = 'back-btn';
-    btn.href = BASE_PATH + '/trucks.html?client_id=' + this.clientId;
-    btn.className = 'logout-btn';
-    btn.title = 'Back to Trucks';
-    btn.style.textDecoration = 'none';
-    btn.textContent = '← Trucks';
-    headerInfo.insertBefore(btn, headerInfo.firstChild);
+    // Same — show trucks nav item linking to this client's trucks
+    const trucksItem = document.getElementById('nav-item-trucks');
+    const trucksLink = document.getElementById('nav-trucks-link');
+    if (trucksItem) trucksItem.style.display = '';
+    if (trucksLink) trucksLink.href = BASE_PATH + '/trucks.html?client_id=' + this.clientId;
+    const clientsItem = document.getElementById('nav-item-clients');
+    if (clientsItem) clientsItem.style.display = '';
   },
 
   // Auth
@@ -133,14 +126,30 @@ const app = {
   },
 
   showUserInfo() {
-    const roleColors = { superuser: '#9b59b6', admin: '#e74c3c', owner: '#e67e22', driver: '#2ecc71' };
+    const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
     const color = roleColors[this.user.role] || '#206bc4';
-    document.getElementById('user-info').innerHTML = `
-      <span class="user-name">${this.user.name || this.user.username}</span>
-      <span class="role-badge" style="background:${color}">${this.user.role}</span>
-    `;
+    // Legacy header info
+    const userInfoEl = document.getElementById('user-info');
+    if (userInfoEl) userInfoEl.innerHTML = `<span class="user-name">${this.user.name || this.user.username}</span> <span class="role-badge" style="background:${color}">${this.user.role}</span>`;
+    // Tabler navbar elements
+    const navAvatar = document.getElementById('nav-avatar');
+    if (navAvatar) { navAvatar.textContent = (this.user.name || this.user.username || '?')[0].toUpperCase(); navAvatar.style.background = color; }
+    const navName = document.getElementById('nav-user-name');
+    if (navName) navName.textContent = this.user.name || this.user.username;
+    const navRole = document.getElementById('nav-user-role');
+    if (navRole) navRole.textContent = this.user.role;
+    // Role-based nav items
+    if (this.user.role === 'admin' || this.user.role === 'superuser') {
+      const clientsEl = document.getElementById('nav-item-clients');
+      if (clientsEl) clientsEl.style.display = '';
+      const clientsLink = clientsEl ? clientsEl.querySelector('a') : null;
+      if (clientsLink) clientsLink.href = BASE_PATH + '/customers.html';
+    }
     if (this.user.role === 'superuser') {
-      document.getElementById('users-btn').style.display = 'inline-flex';
+      const usersBtn = document.getElementById('users-btn');
+      if (usersBtn) usersBtn.style.display = '';
+      const settingsWrap = document.getElementById('nav-settings-wrap');
+      if (settingsWrap) settingsWrap.style.display = '';
     }
   },
 
@@ -165,13 +174,13 @@ const app = {
   initDarkMode() {
     if (localStorage.getItem('darkMode') === 'true') {
       document.body.classList.add('dark');
-      document.querySelector('.dark-mode-btn').textContent = '☀️';
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
     }
   },
 
   toggleDarkMode() {
     const isDark = document.body.classList.toggle('dark');
-    document.querySelector('.dark-mode-btn').textContent = isDark ? '☀️' : '🌙';
+    document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('darkMode', isDark);
   },
 
@@ -684,19 +693,26 @@ const app = {
     const devicesPanel = document.getElementById('devices-panel');
     const tabMap       = document.getElementById('tab-map');
     const tabDevices   = document.getElementById('tab-devices');
+    // Tabler secondary menu nav links
+    const navMap     = document.getElementById('tab-map-nav');
+    const navDevices = document.getElementById('tab-devices-nav');
 
     if (tab === 'map') {
       mapPanel.style.display = '';
       devicesPanel.style.display = 'none';
-      tabMap.classList.add('active');
-      tabDevices.classList.remove('active');
+      if (tabMap)     tabMap.classList.add('active');
+      if (tabDevices) tabDevices.classList.remove('active');
+      if (navMap)     navMap.classList.add('active');
+      if (navDevices) navDevices.classList.remove('active');
       // Invalidate map size in case it was hidden
       if (this.map) setTimeout(() => this.map.invalidateSize(), 50);
     } else {
       mapPanel.style.display = 'none';
       devicesPanel.style.display = '';
-      tabMap.classList.remove('active');
-      tabDevices.classList.add('active');
+      if (tabMap)     tabMap.classList.remove('active');
+      if (tabDevices) tabDevices.classList.add('active');
+      if (navMap)     navMap.classList.remove('active');
+      if (navDevices) navDevices.classList.add('active');
       this.loadDevicesTable();
     }
   },
