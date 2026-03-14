@@ -97,9 +97,36 @@ DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME=teltonika, PORT=8000
 
 Reference: `backend/.env.example` for required variables.
 
+## Authentication
+
+JWT-based auth with 8-hour token expiry. All `/api/device/*` endpoints require a `Authorization: Bearer <token>` header.
+
+**Roles:** `superuser`, `admin`, `owner`, `driver`
+
+**Key files:**
+- `backend/auth.js` — `login()`, `requireAuth` middleware, `requireRole` middleware
+- `backend/seed-users.js` — creates default users: `node seed-users.js`
+- `frontend/public/login.html` — login page (redirects to dashboard on success)
+
+**API endpoints:**
+- `POST /api/auth/login` — `{ username, password }` → `{ token, user }`
+- `GET /api/auth/me` — returns current user from token
+
+**Environment:** Set `JWT_SECRET` in `backend/.env` for production (defaults to a hardcoded string).
+
+**Default credentials (run `node seed-users.js` to create):**
+
+| Role | Username | Password |
+|------|----------|----------|
+| superuser | superuser | superuser123 |
+| admin | admin | admin123 |
+| owner | owner | owner123 |
+| driver | driver | driver123 |
+
 ## Key Implementation Details
 
 - Python server parses raw Teltonika binary protocol — codec parsing logic is in `teltonika_server.py`
 - MySQL connection pool managed in `backend/database.js`; all DB queries go through that module
 - Frontend auto-refreshes every 30 seconds via `setInterval` in `app.js`
-- No build step for frontend — served as static files directly by Express
+- No build step for frontend — served as static files directly by nginx (not Node.js); nginx proxies `/newdashboard/api/*` to port 3001
+- Token stored in `localStorage`; on 401 response the frontend redirects to `login.html`
