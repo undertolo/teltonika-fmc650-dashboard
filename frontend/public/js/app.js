@@ -9,14 +9,55 @@ const app = {
   selectedDevice: null,
   routePolyline: null,
   autoRefreshInterval: null,
+  user: null,
 
   // Inicialización
   async init() {
+    if (!this.initAuth()) return;
     this.initDarkMode();
     this.initMap();
     await this.loadDevices();
     this.startAutoRefresh();
     this.updateServerStatus();
+  },
+
+  // Auth
+  initAuth() {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (!token || !user) {
+      window.location.replace('/login.html');
+      return false;
+    }
+    this.user = JSON.parse(user);
+    this.showUserInfo();
+    return true;
+  },
+
+  showUserInfo() {
+    const roleColors = { superuser: '#9b59b6', admin: '#e74c3c', owner: '#e67e22', driver: '#2ecc71' };
+    const color = roleColors[this.user.role] || '#3498db';
+    document.getElementById('user-info').innerHTML = `
+      <span class="user-name">${this.user.name || this.user.username}</span>
+      <span class="role-badge" style="background:${color}">${this.user.role}</span>
+    `;
+  },
+
+  authHeaders() {
+    return { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+  },
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('/login.html');
+  },
+
+  // Handle 401 from any API call
+  handleUnauthorized() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.replace('/login.html');
   },
 
   // Dark mode
@@ -48,7 +89,8 @@ const app = {
   // Cargar dispositivos
   async loadDevices() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/devices`);
+      const response = await fetch(`${API_BASE_URL}/api/devices`, { headers: this.authHeaders() });
+      if (response.status === 401) { this.handleUnauthorized(); return; }
       const data = await response.json();
 
       if (data.success) {
@@ -115,7 +157,7 @@ const app = {
     // Fetch all latest positions in parallel
     const results = await Promise.allSettled(
       devices.map(d =>
-        fetch(`${API_BASE_URL}/api/device/${d.imei}/latest`).then(r => r.json())
+        fetch(`${API_BASE_URL}/api/device/${d.imei}/latest`, { headers: this.authHeaders() }).then(r => r.json())
       )
     );
 
@@ -214,7 +256,8 @@ const app = {
   async loadDeviceData(imei) {
     try {
       // Cargar última posición
-      const posResponse = await fetch(`${API_BASE_URL}/api/device/${imei}/latest`);
+      const posResponse = await fetch(`${API_BASE_URL}/api/device/${imei}/latest`, { headers: this.authHeaders() });
+      if (posResponse.status === 401) { this.handleUnauthorized(); return; }
       const posData = await posResponse.json();
 
       if (posData.success && posData.position) {
@@ -222,7 +265,7 @@ const app = {
       }
 
       // Cargar estadísticas
-      const statsResponse = await fetch(`${API_BASE_URL}/api/device/${imei}/stats`);
+      const statsResponse = await fetch(`${API_BASE_URL}/api/device/${imei}/stats`, { headers: this.authHeaders() });
       const statsData = await statsResponse.json();
 
       if (statsData.success && statsData.stats) {
@@ -230,7 +273,7 @@ const app = {
       }
 
       // Cargar ruta (últimas 24 horas)
-      const routeResponse = await fetch(`${API_BASE_URL}/api/device/${imei}/route?hours=24&limit=500`);
+      const routeResponse = await fetch(`${API_BASE_URL}/api/device/${imei}/route?hours=24&limit=500`, { headers: this.authHeaders() });
       const routeData = await routeResponse.json();
 
       if (routeData.success && routeData.route) {

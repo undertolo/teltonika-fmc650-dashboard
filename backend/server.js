@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { testConnection, createTables, db } = require('./database');
+const { login, requireAuth, requireRole } = require('./auth');
 require('dotenv').config();
 
 const app = express();
@@ -16,10 +17,31 @@ app.use(morgan('dev'));
 // Servir archivos estáticos del frontend
 app.use(express.static('../frontend/public'));
 
+// ==================== RUTAS DE AUTH ====================
+
+// POST /api/auth/login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Username and password required' });
+    }
+    const result = await login(username, password);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(401).json({ success: false, error: 'Invalid credentials' });
+  }
+});
+
+// GET /api/auth/me
+app.get('/api/auth/me', requireAuth, (req, res) => {
+  res.json({ success: true, user: req.user });
+});
+
 // ==================== RUTAS DE API ====================
 
 // GET /api/devices - Obtener todos los dispositivos
-app.get('/api/devices', async (req, res) => {
+app.get('/api/devices', requireAuth, async (req, res) => {
   try {
     const devices = await db.getDevices();
     res.json({
@@ -37,43 +59,34 @@ app.get('/api/devices', async (req, res) => {
 });
 
 // GET /api/device/:imei/latest - Última posición de un dispositivo
-app.get('/api/device/:imei/latest', async (req, res) => {
+app.get('/api/device/:imei/latest', requireAuth, async (req, res) => {
   try {
     const { imei } = req.params;
     const position = await db.getLatestPosition(imei);
-    
+
     if (position) {
-      res.json({
-        success: true,
-        position
-      });
+      res.json({ success: true, position });
     } else {
-      res.status(404).json({
-        success: false,
-        error: 'No se encontraron datos para este dispositivo'
-      });
+      res.status(404).json({ success: false, error: 'No se encontraron datos para este dispositivo' });
     }
   } catch (error) {
     console.error('Error obteniendo posición:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error obteniendo posición'
-    });
+    res.status(500).json({ success: false, error: 'Error obteniendo posición' });
   }
 });
 
 // GET /api/device/:imei/route - Historial de ruta
-app.get('/api/device/:imei/route', async (req, res) => {
+app.get('/api/device/:imei/route', requireAuth, async (req, res) => {
   try {
     const { imei } = req.params;
     const hours = parseInt(req.query.hours) || 24;
     const limit = parseInt(req.query.limit) || 1000;
-    
+
     const route = await db.getRouteHistory(imei, hours, limit);
-    
+
     const startDate = new Date();
     startDate.setHours(startDate.getHours() - hours);
-    
+
     res.json({
       success: true,
       route,
@@ -86,54 +99,34 @@ app.get('/api/device/:imei/route', async (req, res) => {
     });
   } catch (error) {
     console.error('Error obteniendo ruta:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error obteniendo ruta'
-    });
+    res.status(500).json({ success: false, error: 'Error obteniendo ruta' });
   }
 });
 
 // GET /api/device/:imei/stats - Estadísticas de un dispositivo
-app.get('/api/device/:imei/stats', async (req, res) => {
+app.get('/api/device/:imei/stats', requireAuth, async (req, res) => {
   try {
     const { imei } = req.params;
     const stats = await db.getDeviceStats(imei);
-    
+
     if (stats) {
-      res.json({
-        success: true,
-        stats
-      });
+      res.json({ success: true, stats });
     } else {
-      res.status(404).json({
-        success: false,
-        error: 'Dispositivo no encontrado'
-      });
+      res.status(404).json({ success: false, error: 'Dispositivo no encontrado' });
     }
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error obteniendo estadísticas'
-    });
+    res.status(500).json({ success: false, error: 'Error obteniendo estadísticas' });
   }
 });
 
-// GET /api/health - Health check
+// GET /api/health - Health check (public)
 app.get('/api/health', async (req, res) => {
   try {
     const health = await db.healthCheck();
-    res.json({
-      success: true,
-      ...health,
-      timestamp: new Date().toISOString()
-    });
+    res.json({ success: true, ...health, timestamp: new Date().toISOString() });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      status: 'unhealthy',
-      error: error.message
-    });
+    res.status(500).json({ success: false, status: 'unhealthy', error: error.message });
   }
 });
 
@@ -146,16 +139,11 @@ app.get('*', (req, res) => {
 
 async function startServer() {
   try {
-    // Verificar conexión a base de datos
     const connected = await testConnection();
-    if (!connected) {
-      throw new Error('No se pudo conectar a la base de datos');
-    }
+    if (!connected) throw new Error('No se pudo conectar a la base de datos');
 
-    // Crear tablas si no existen
     await createTables();
 
-    // Iniciar servidor
     app.listen(PORT, () => {
       console.log('='.repeat(60));
       console.log('🚀 SERVIDOR TELTONIKA NODE.JS');
@@ -170,16 +158,7 @@ async function startServer() {
   }
 }
 
-// Manejo de cierre graceful
-process.on('SIGINT', () => {
-  console.log('\n🛑 Cerrando servidor...');
-  process.exit(0);
-});
+process.on('SIGINT', () => { console.log('\n🛑 Cerrando servidor...'); process.exit(0); });
+process.on('SIGTERM', () => { console.log('\n🛑 Cerrando servidor...'); process.exit(0); });
 
-process.on('SIGTERM', () => {
-  console.log('\n🛑 Cerrando servidor...');
-  process.exit(0);
-});
-
-// Iniciar
 startServer();

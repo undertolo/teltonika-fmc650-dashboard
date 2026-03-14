@@ -61,6 +61,42 @@ h1 {
     font-size: 0.9rem;
 }
 
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.user-name {
+    opacity: 0.9;
+}
+
+.role-badge {
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    text-transform: capitalize;
+}
+
+.logout-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    transition: background 0.2s;
+    color: white;
+}
+
+.logout-btn:hover {
+    background: rgba(231, 76, 60, 0.6);
+}
+
 .dark-mode-btn {
     background: rgba(255,255,255,0.15);
     border: none;
