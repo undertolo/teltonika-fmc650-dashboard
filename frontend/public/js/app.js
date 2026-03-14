@@ -39,10 +39,17 @@ const app = {
       await this.loadClientFilter();
     }
 
+    // Auto-switch to devices tab if ?tab=devices in URL
+    const tabParam = params.get('tab');
+
     this.initMap();
     await this.loadDevices();
     this.startAutoRefresh();
     this.updateServerStatus();
+
+    if (tabParam === 'devices') {
+      this.switchTab('devices');
+    }
   },
 
   // Load the list of IMEIs for the selected client
@@ -145,11 +152,21 @@ const app = {
       const clientsLink = clientsEl ? clientsEl.querySelector('a') : null;
       if (clientsLink) clientsLink.href = BASE_PATH + '/customers.html';
     }
+    // Configuración dropdown: visible to admin + superuser
+    if (this.user.role === 'admin' || this.user.role === 'superuser') {
+      const settingsWrap = document.getElementById('nav-settings-wrap');
+      if (settingsWrap) settingsWrap.style.display = '';
+      const vehiclesLink = document.getElementById('nav-vehicles-link');
+      if (vehiclesLink) vehiclesLink.href = BASE_PATH + '/customers.html';
+      // Dispositivos handled by onclick switchTab
+    }
     if (this.user.role === 'superuser') {
       const usersBtn = document.getElementById('users-btn');
       if (usersBtn) usersBtn.style.display = '';
-      const settingsWrap = document.getElementById('nav-settings-wrap');
-      if (settingsWrap) settingsWrap.style.display = '';
+      const settingsUsers = document.getElementById('nav-settings-users');
+      if (settingsUsers) settingsUsers.style.display = '';
+      const settingsDivider = document.getElementById('nav-settings-divider');
+      if (settingsDivider) settingsDivider.style.display = '';
     }
   },
 

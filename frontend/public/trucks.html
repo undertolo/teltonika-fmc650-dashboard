@@ -165,8 +165,15 @@
                   <span class="nav-link-title">Configuración</span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end">
-                  <a href="#" class="dropdown-item" id="nav-settings-link">
+                  <a href="#" class="dropdown-item" id="nav-settings-link" style="display:none">
                     <i class="ti ti-users me-2"></i>Administrar Usuarios
+                  </a>
+                  <div class="dropdown-divider" id="nav-settings-divider" style="display:none"></div>
+                  <a href="#" class="dropdown-item" id="nav-vehicles-link">
+                    <i class="ti ti-truck me-2"></i>Vehículos
+                  </a>
+                  <a href="#" class="dropdown-item" id="nav-devices-link">
+                    <i class="ti ti-router me-2"></i>Dispositivos
                   </a>
                 </div>
               </li>
@@ -303,9 +310,15 @@
     document.getElementById('nav-avatar').style.background = color;
     document.getElementById('nav-user-name').textContent = user.name || user.username;
     document.getElementById('nav-user-role').textContent = user.role;
-    if (user.role === 'superuser') {
+    if (user.role === 'admin' || user.role === 'superuser') {
       document.getElementById('nav-settings-wrap').style.display = '';
+      document.getElementById('nav-vehicles-link').href = BASE_PATH + '/customers.html';
+      document.getElementById('nav-devices-link').href = BASE_PATH + '/?tab=devices';
+    }
+    if (user.role === 'superuser') {
+      document.getElementById('nav-settings-link').style.display = '';
       document.getElementById('nav-settings-link').href = BASE_PATH + '/';
+      document.getElementById('nav-settings-divider').style.display = '';
     }
   }
 

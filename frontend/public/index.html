@@ -112,8 +112,15 @@
                     <span class="nav-link-title">Configuración</span>
                   </a>
                   <div class="dropdown-menu dropdown-menu-end">
-                    <a href="javascript:void(0)" class="dropdown-item" onclick="app.openUserPanel()">
+                    <a href="javascript:void(0)" class="dropdown-item" id="nav-settings-users" onclick="app.openUserPanel()" style="display:none">
                       <i class="ti ti-users me-2"></i>Administrar Usuarios
+                    </a>
+                    <div class="dropdown-divider" id="nav-settings-divider" style="display:none"></div>
+                    <a href="javascript:void(0)" class="dropdown-item" id="nav-vehicles-link">
+                      <i class="ti ti-truck me-2"></i>Vehículos
+                    </a>
+                    <a href="javascript:void(0)" class="dropdown-item" id="nav-devices-link" onclick="app.switchTab('devices')">
+                      <i class="ti ti-router me-2"></i>Dispositivos
                     </a>
                   </div>
                 </li>
