@@ -114,8 +114,8 @@
         <div class="page-header d-print-none">
           <div class="row align-items-center">
             <div class="col">
-              <h2 class="page-title">Dispositivos Teltonika</h2>
-              <div class="text-muted mt-1">Listado de todos los dispositivos FMC650 registrados</div>
+              <h2 class="page-title">Dispositivos Registrados</h2>
+              <div class="text-muted mt-1">Listado de todos los dispositivos:</div>
             </div>
             <div class="col-auto ms-auto d-print-none">
               <div class="d-flex gap-2 align-items-center">
@@ -123,7 +123,12 @@
                 <input type="search" id="search-input" class="form-control form-control-sm"
                        placeholder="Buscar IMEI, unidad..." oninput="filterDevices(this.value)"
                        style="width:220px;">
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadDevices(true)" title="Actualizar">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Intervalo de actualización">
+                  <button type="button" class="btn btn-primary interval-btn" data-interval="10000" onclick="setRefreshInterval(10000)">10s</button>
+                  <button type="button" class="btn btn-outline-primary interval-btn" data-interval="30000" onclick="setRefreshInterval(30000)">30s</button>
+                  <button type="button" class="btn btn-outline-primary interval-btn" data-interval="60000" onclick="setRefreshInterval(60000)">1m</button>
+                </div>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadDevices(true)" title="Actualizar">
                   <i class="ti ti-refresh"></i>
                 </button>
               </div>
@@ -176,6 +181,7 @@
                   <th>Estado</th>
                   <th>IMEI (Número de Serie)</th>
                   <th>Señal Celular</th>
+                  <th>Satélites GPS</th>
                   <th>Batería</th>
                   <th>Voltaje Ext.</th>
                   <th>Unidad asignada</th>
@@ -186,7 +192,7 @@
               </thead>
               <tbody id="devices-tbody">
                 <tr>
-                  <td colspan="9" class="text-center text-muted py-4">
+                  <td colspan="10" class="text-center text-muted py-4">
                     <div class="spinner-border spinner-border-sm me-2"></div>Cargando dispositivos...
                   </td>
                 </tr>
@@ -298,7 +304,7 @@
   let allClients = [];   // cached from /api/clients
   let refreshTimer = null;
   let lastRefreshTime = null;
-  const REFRESH_INTERVAL = 30000; // 30 seconds
+  let REFRESH_INTERVAL = 10000; // default 10 seconds
   const ONLINE_THRESHOLD_MS = 60 * 1000; // 60 seconds
 
   function isOnline(last_seen) {
@@ -334,6 +340,13 @@
     </div>`;
   }
 
+  function satelliteDisplay(sats) {
+    if (sats === null || sats === undefined) return '<span class="text-muted small">N/D</span>';
+    const n = parseInt(sats);
+    const color = n === 0 ? 'danger' : n < 4 ? 'warning' : 'success';
+    return `<span class="text-${color}"><i class="ti ti-satellite me-1"></i>${n}</span>`;
+  }
+
   function extVoltageDisplay(mv) {
     if (mv === null || mv === undefined) return '<span class="text-muted small">N/D</span>';
     if (mv < 100) return `<span class="text-muted small"><i class="ti ti-plug-off me-1"></i>Desconectado</span>`;
@@ -360,7 +373,7 @@
   async function loadDevices(showSpinner = false) {
     if (showSpinner || !allDevices.length) {
       document.getElementById('devices-tbody').innerHTML = `
-        <tr><td colspan="9" class="text-center text-muted py-4">
+        <tr><td colspan="10" class="text-center text-muted py-4">
           <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
         </td></tr>`;
     }
@@ -411,7 +424,7 @@
   function renderDevices(devices) {
     const tbody = document.getElementById('devices-tbody');
     if (!devices.length) {
-      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">No se encontraron dispositivos</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted py-4">No se encontraron dispositivos</td></tr>`;
       return;
     }
     tbody.innerHTML = devices.map(d => deviceRow(d)).join('');
@@ -436,6 +449,7 @@
         <small class="text-muted">ID: ${d.id}</small>
       </td>
       <td>${signalBars(d.signal_level)}</td>
+      <td>${satelliteDisplay(d.last_satellites)}</td>
       <td>${batteryDisplay(d.battery_mv)}</td>
       <td>${extVoltageDisplay(d.ext_voltage_mv)}</td>
       <td>${truck}</td>
@@ -479,7 +493,7 @@
 
   function showError(msg) {
     document.getElementById('devices-tbody').innerHTML = `
-      <tr><td colspan="9" class="text-center py-4">
+      <tr><td colspan="10" class="text-center py-4">
         <i class="ti ti-alert-triangle text-danger me-2"></i>
         <span class="text-danger">${escHtml(msg)}</span>
       </td></tr>`;
@@ -487,12 +501,24 @@
 
   // ── Auto-refresh ──────────────────────────────────────────
   function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(() => {
       loadDevices(false);
       updateRefreshIndicator();
     }, REFRESH_INTERVAL);
     // Also tick the "last updated X seconds ago" every 5s
     setInterval(updateRefreshIndicator, 5000);
+  }
+
+  function setRefreshInterval(ms) {
+    REFRESH_INTERVAL = ms;
+    document.querySelectorAll('.interval-btn').forEach(btn => {
+      const selected = parseInt(btn.dataset.interval) === ms;
+      btn.classList.toggle('btn-primary', selected);
+      btn.classList.toggle('btn-outline-primary', !selected);
+    });
+    startAutoRefresh();
+    loadDevices(false);
   }
 
   // ── Preload clients + vehicles ────────────────────────────
