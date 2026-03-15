@@ -426,8 +426,8 @@
     tbody.innerHTML = list.map(v => {
       const brandModel = [v.brand, v.model, v.year].filter(Boolean).join(' ');
       const deviceCell = v.device_count > 0
-        ? `<span class="font-monospace" style="font-size:.78rem">${escHtml(v.device_imeis || '')}</span>`
-        : `<span class="text-muted small">Sin dispositivo</span>`;
+        ? `<div class="d-flex align-items-center gap-1"><i class="ti ti-router text-muted"></i><span class="font-monospace" style="font-size:.78rem">${escHtml(v.device_imeis || '')}</span></div>`
+        : `<span class="text-muted small"><i class="ti ti-router me-1"></i>Sin dispositivo</span>`;
 
       return `<tr>
         <td>
