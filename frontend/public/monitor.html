@@ -310,7 +310,7 @@
   let allDevices   = [];
   let selectedImei = null;
   let favorites    = new Set(JSON.parse(localStorage.getItem('fahr_favs') || '[]'));
-  const ONLINE_MS  = 60 * 1000;
+  const ONLINE_MS  = 90 * 60 * 1000; // 90 minutes
 
   function isOnline(last_seen) {
     return last_seen && (Date.now() - new Date(last_seen).getTime()) < ONLINE_MS;
