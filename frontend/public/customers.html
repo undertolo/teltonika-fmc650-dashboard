@@ -200,10 +200,10 @@
   document.getElementById('footer-year').textContent = new Date().getFullYear();
   const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
   if (user) {
-    const color = roleColors[user.role] || '#206bc4';
-    const initial = (user.name || user.username || '?')[0].toUpperCase();
-    document.getElementById('nav-avatar').textContent = initial;
-    document.getElementById('nav-avatar').style.background = color;
+    document.getElementById('nav-avatar').innerHTML = '<i class="ti ti-user" style="font-size:1rem"></i>';
+    document.getElementById('nav-avatar').style.background = '#4dabf720';
+    document.getElementById('nav-avatar').style.border = '2px solid #4dabf7';
+    document.getElementById('nav-avatar').style.color = '#4dabf7';
     document.getElementById('nav-user-name').textContent = user.name || user.username;
     document.getElementById('nav-user-role').textContent = user.role;
   }
@@ -254,7 +254,7 @@
           <div class="card card-link" onclick="viewClient(${c.id})">
             <div class="card-body">
               <div class="d-flex align-items-center mb-2">
-                <span class="avatar-initials me-2" style="background:${avatarColor(c.id)}">${escHtml(initial)}</span>
+                <span class="avatar-initials me-2" style="background:#4dabf720;border:2px solid #4dabf7"><i class="ti ti-user-circle" style="font-size:1.1rem;color:#4dabf7"></i></span>
                 <div class="flex-fill" style="min-width:0">
                   <div class="fw-bold text-truncate" style="font-size:.9rem">${escHtml(c.name||'—')}</div>
                   ${sub ? `<div class="text-muted text-truncate" style="font-size:.78rem">${sub}</div>` : ''}
@@ -266,7 +266,6 @@
               <div class="row g-1">
                 <div class="col-auto"><span class="badge bg-orange-lt"><i class="ti ti-truck me-1"></i>${c.truck_count} unidad${c.truck_count!==1?'es':''}</span></div>
                 <div class="col-auto"><span class="badge bg-blue-lt"><i class="ti ti-router me-1"></i>${c.device_count} disp.</span></div>
-                <div class="col-auto"><span class="badge ${satBadgeClass(c.avg_satellites)}"><i class="ti ti-satellite me-1"></i>${c.avg_satellites !== null && c.avg_satellites !== undefined ? c.avg_satellites + ' sat.' : 'N/D'}</span></div>
               </div>
             </div>
           </div>
@@ -291,11 +290,6 @@
       <div class="empty-icon text-danger"><i class="ti ti-alert-triangle" style="font-size:3rem"></i></div>
       <p class="empty-title">Error</p><p class="empty-subtitle text-danger">${escHtml(msg)}</p>
     </div></div></div>`;
-  }
-
-  function satBadgeClass(sats) {
-    if (sats === null || sats === undefined) return 'bg-secondary-lt';
-    return sats === 0 ? 'bg-danger-lt' : sats < 4 ? 'bg-warning-lt' : 'bg-success-lt';
   }
 
   function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
