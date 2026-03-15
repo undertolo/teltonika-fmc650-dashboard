@@ -440,7 +440,7 @@
           <small class="text-muted" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>
         </td>
         <td>${ignBadge}${speedHtml}</td>
-        <td>${onlineBadge}</td>
+        <td>${onlineBadge}<small class="text-muted d-block mt-1" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small></td>
         <td onclick="event.stopPropagation()">
           <button class="star-btn${isFav ? ' starred' : ''}" onclick="toggleFav('${escHtml(d.imei)}')" title="${isFav ? 'Quitar favorito' : 'Agregar favorito'}">
             <i class="ti ti-star${isFav ? '-filled' : ''}"></i>
@@ -562,7 +562,7 @@
       const onlineBadge = online
         ? `<span class="badge bg-success-lt"><i class="ti ti-wifi me-1"></i>En línea</span>`
         : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
-      row.cells[3].innerHTML = onlineBadge;
+      row.cells[3].innerHTML = onlineBadge + `<small class="text-muted d-block mt-1" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>`;
     });
   }
 
