@@ -109,7 +109,7 @@
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="nav-vehicles-link" href="#">
+              <a class="nav-link" id="nav-vehicles-link" href="vehicles.html">
                 <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-truck"></i></span>
                 <span class="nav-link-title">Vehículos</span>
               </a>
@@ -267,7 +267,7 @@
   }
 
   document.getElementById('footer-year').textContent = new Date().getFullYear();
-  document.getElementById('nav-vehicles-link').href  = BASE_PATH + '/vehicles.html';
+  document.getElementById('nav-vehicles-link').href  = BASE_PATH + '/vehicles.html' + (CLIENT_ID ? '?client_id=' + CLIENT_ID : '');
   if (user && (user.role === 'admin' || user.role === 'superuser')) {
     document.getElementById('nav-settings-wrap').style.display = '';
   }
