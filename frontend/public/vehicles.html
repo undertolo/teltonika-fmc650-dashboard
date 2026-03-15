@@ -313,7 +313,6 @@
   }
 
   document.getElementById('footer-year').textContent = new Date().getFullYear();
-  document.getElementById('nav-monitor-link').href = BASE_PATH + '/';
 
   const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
   if (user) {
@@ -322,11 +321,6 @@
     document.getElementById('nav-avatar').style.background = color;
     document.getElementById('nav-user-name').textContent = user.name || user.username;
     document.getElementById('nav-user-role').textContent = user.role;
-    if (user.role === 'superuser') {
-      document.getElementById('nav-settings-link').style.display = '';
-      document.getElementById('nav-settings-link').href = BASE_PATH + '/';
-      document.getElementById('nav-settings-divider').style.display = '';
-    }
   }
 
   // ── State ─────────────────────────────────────────────────
