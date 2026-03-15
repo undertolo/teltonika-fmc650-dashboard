@@ -302,7 +302,7 @@
   let refreshTimer = null;
   let lastRefreshTime = null;
   const REFRESH_INTERVAL = 30000; // 30 seconds
-  const ONLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+  const ONLINE_THRESHOLD_MS = 60 * 1000; // 60 seconds
 
   function isOnline(last_seen) {
     if (!last_seen) return false;
@@ -421,16 +421,10 @@
   }
 
   function deviceRow(d) {
-    const online   = isOnline(d.last_seen);
-    const sleeping = d.sleep_mode == 1;
-    let statusBadge;
-    if (online) {
-      statusBadge = `<span class="badge badge-online"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`;
-    } else if (sleeping) {
-      statusBadge = `<span class="badge badge-sleep"><span class="status-dot bg-warning me-1"></span>Dormido</span>`;
-    } else {
-      statusBadge = `<span class="badge badge-offline"><span class="status-dot bg-danger me-1"></span>Sin conexión</span>`;
-    }
+    const online = isOnline(d.last_seen);
+    const statusBadge = online
+      ? `<span class="badge badge-online"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`
+      : `<span class="badge badge-offline"><span class="status-dot bg-danger me-1"></span>Sin conexión</span>`;
 
     const truck = d.truck_name
       ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
