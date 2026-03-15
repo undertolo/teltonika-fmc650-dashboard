@@ -103,20 +103,6 @@
               </a>
             </li>
           </ul>
-          <div class="my-2 my-md-0 flex-grow-1 flex-md-grow-0 order-md-last" id="nav-settings-wrap" style="display:none">
-            <ul class="navbar-nav">
-              <li class="nav-item dropdown">
-                <a href="javascript:void(0)" class="nav-link" data-bs-toggle="dropdown">
-                  <span class="nav-link-icon d-md-none d-lg-inline-block"><i class="ti ti-settings"></i></span>
-                  <span class="nav-link-title">Configuración</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end">
-                  <a href="vehicles.html" class="dropdown-item"><i class="ti ti-truck me-2"></i>Vehículos</a>
-                  <a href="devices-admin.html" class="dropdown-item"><i class="ti ti-router me-2"></i>Dispositivos</a>
-                </div>
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
     </div>
@@ -261,9 +247,6 @@
 
   document.getElementById('footer-year').textContent = new Date().getFullYear();
   document.getElementById('nav-vehicles-link').href  = BASE_PATH + '/vehicles.html' + (CLIENT_ID ? '?client_id=' + CLIENT_ID : '');
-  if (user && (user.role === 'admin' || user.role === 'superuser')) {
-    document.getElementById('nav-settings-wrap').style.display = '';
-  }
 
   const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
   if (user) {
@@ -364,16 +347,16 @@
     }, 1000);
   }
 
-  function makeMarkerIcon(online, selected) {
+  function makeMarkerIcon(online, selected, angle) {
     const color = selected ? '#d63939' : online ? '#2fb344' : '#94a3b8';
-    const scale = selected ? 10 : 7;
     return {
-      path: google.maps.SymbolPath.CIRCLE,
-      scale,
+      path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+      scale: selected ? 8 : 6,
       fillColor: color,
       fillOpacity: 1,
       strokeColor: '#ffffff',
-      strokeWeight: 2
+      strokeWeight: 1.5,
+      rotation: angle || 0
     };
   }
 
@@ -410,12 +393,12 @@
       const pos = { lat: parseFloat(d.last_lat), lng: parseFloat(d.last_lng) };
       if (markers[d.imei]) {
         markers[d.imei].setPosition(pos);
-        markers[d.imei].setIcon(makeMarkerIcon(online, selected));
+        markers[d.imei].setIcon(makeMarkerIcon(online, selected, d.angle));
       } else {
         const m = new google.maps.Marker({
           position: pos,
           map,
-          icon: makeMarkerIcon(online, selected),
+          icon: makeMarkerIcon(online, selected, d.angle),
           title: d.truck_name || d.imei
         });
         m.addListener('click', () => {
@@ -517,7 +500,7 @@
 
     // Update marker icons
     allDevices.forEach(d => {
-      if (markers[d.imei]) markers[d.imei].setIcon(makeMarkerIcon(isOnline(d.last_seen), d.imei === imei));
+      if (markers[d.imei]) markers[d.imei].setIcon(makeMarkerIcon(isOnline(d.last_seen), d.imei === imei, d.angle));
     });
 
     // Center on marker + open info window
@@ -574,7 +557,7 @@
     infoWindow.close();
     document.getElementById('route-bar').style.display = 'none';
     allDevices.forEach(d => {
-      if (markers[d.imei]) markers[d.imei].setIcon(makeMarkerIcon(isOnline(d.last_seen), false));
+      if (markers[d.imei]) markers[d.imei].setIcon(makeMarkerIcon(isOnline(d.last_seen), false, d.angle));
     });
     const q = document.getElementById('device-search').value;
     filterTable(q);
