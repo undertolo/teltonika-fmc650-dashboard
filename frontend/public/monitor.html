@@ -397,9 +397,12 @@
       const ignOn    = d.ignition == 1;
       const active   = d.imei === selectedImei ? ' active' : '';
       const isFav    = favorites.has(d.imei);
+      const statusDot = online
+        ? `<span class="status-dot status-dot-animated bg-success me-2" title="En línea"></span>`
+        : `<span class="status-dot bg-secondary me-2" title="Desconectado"></span>`;
       const truckLbl = d.truck_name
-        ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
-        : `<span class="text-muted small">Sin unidad</span>`;
+        ? `<div class="d-flex align-items-center">${statusDot}<div><div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}</div></div>`
+        : `<div class="d-flex align-items-center">${statusDot}<span class="text-muted small">Sin unidad</span></div>`;
 
       const wifiIcon = online
         ? `<i class="ti ti-wifi text-success" title="En línea"></i>`
@@ -526,6 +529,15 @@
       const online = isOnline(d.last_seen);
       const ignOn  = d.ignition == 1;
 
+      // Update status dot in vehicle cell (index 0)
+      const dotEl = row.cells[0].querySelector('.status-dot');
+      if (dotEl) {
+        dotEl.className = online
+          ? 'status-dot status-dot-animated bg-success me-2'
+          : 'status-dot bg-secondary me-2';
+        dotEl.title = online ? 'En línea' : 'Desconectado';
+      }
+
       // Update status cell (index 2)
       const wifiIcon = online
         ? `<i class="ti ti-wifi text-success" title="En línea"></i>`
@@ -563,6 +575,17 @@
       if (initial) {
         const q = document.getElementById('device-search').value;
         filterTable(q);
+        // Auto-select first device (favorites → online → offline) that has a location
+        if (!selectedImei && allDevices.length) {
+          const sorted = [...allDevices].sort((a, b) => {
+            const fa = favorites.has(a.imei) ? 0 : 1;
+            const fb = favorites.has(b.imei) ? 0 : 1;
+            if (fa !== fb) return fa - fb;
+            return isOnline(b.last_seen) - isOnline(a.last_seen);
+          });
+          const first = sorted.find(d => d.last_lat && d.last_lng) || sorted[0];
+          if (first) selectDevice(first.imei);
+        }
       } else {
         silentUpdate(allDevices);
       }
