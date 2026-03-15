@@ -294,6 +294,15 @@
     return `${label} <span class="${cls}">${level}/5</span>`;
   }
 
+  function batteryHtml(mv) {
+    if (mv === null || mv === undefined) return '';
+    // FMC650 internal battery: ~3200 mV empty, ~4200 mV full
+    const pct = Math.min(100, Math.max(0, Math.round((mv - 3200) / (4200 - 3200) * 100)));
+    const cls  = pct <= 20 ? 'text-danger' : pct <= 50 ? 'text-warning' : 'text-success';
+    const icon = pct <= 20 ? 'ti-battery-1' : pct <= 50 ? 'ti-battery-2' : pct <= 80 ? 'ti-battery-3' : 'ti-battery-4';
+    return `<span class="${cls}"><i class="ti ${icon} me-1"></i>${pct}%</span>`;
+  }
+
   // ── State ─────────────────────────────────────────────────
   let map, routePolyline;
   const markers    = {};
@@ -419,11 +428,12 @@
       const speedHtml = d.last_speed !== null && d.last_speed !== undefined
         ? `<small class="text-muted d-block mt-1"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</small>` : '';
 
-      // Señal column: online/offline + signal level
+      // Señal column: online/offline + signal level + battery
       const onlineBadge = online
         ? `<span class="badge bg-success-lt"><i class="ti ti-wifi me-1"></i>En línea</span>`
         : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
       const sigHtml = signalHtml(d.signal_level);
+      const batHtml = batteryHtml(d.battery_mv);
 
       return `<tr class="device-row${active}" data-imei="${escHtml(d.imei)}" onclick="selectDevice('${escHtml(d.imei)}')">
         <td>${truckLbl}</td>
@@ -432,7 +442,7 @@
           <small class="text-muted" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>
         </td>
         <td>${ignBadge}${speedHtml}</td>
-        <td>${onlineBadge}<small class="text-muted d-block mt-1">${sigHtml}</small></td>
+        <td>${onlineBadge}<small class="d-block mt-1">${sigHtml}</small>${batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : ''}</td>
         <td onclick="event.stopPropagation()">
           <button class="star-btn${isFav ? ' starred' : ''}" onclick="toggleFav('${escHtml(d.imei)}')" title="${isFav ? 'Quitar favorito' : 'Agregar favorito'}">
             <i class="ti ti-star${isFav ? '-filled' : ''}"></i>
@@ -550,7 +560,10 @@
       const onlineBadge = online
         ? `<span class="badge bg-success-lt"><i class="ti ti-wifi me-1"></i>En línea</span>`
         : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
-      row.cells[3].innerHTML = onlineBadge + `<small class="text-muted d-block mt-1">${signalHtml(d.signal_level)}</small>`;
+      const batHtml = batteryHtml(d.battery_mv);
+      row.cells[3].innerHTML = onlineBadge
+        + `<small class="d-block mt-1">${signalHtml(d.signal_level)}</small>`
+        + (batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : '');
 
       // Update data-ts so ticker picks it up
       const tsEl = row.querySelector('[data-ts]');
