@@ -36,7 +36,7 @@
     .btn-secondary { background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 0.4rem 1rem; border-radius: var(--radius); font-size: 0.8rem; cursor: pointer; }
 
     /* Trucks grid */
-    .trucks-grid { padding: 1.25rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .trucks-grid { padding: 1.25rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px,100%), 1fr)); gap: 1rem; }
     .truck-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1rem; transition: border-color 0.15s, box-shadow 0.15s; }
     .truck-card:hover { border-color: #206bc4; box-shadow: 0 2px 8px rgba(32,107,196,0.1); }
     .truck-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; }
@@ -79,7 +79,7 @@
     .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
     .empty-state-text { font-size: 0.875rem; }
 
-    .search-input { padding: 0.35rem 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-color); color: var(--text-color); width: 200px; outline: none; }
+    .search-input { padding: 0.35rem 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-color); color: var(--text-color); width: 100%; max-width: 220px; min-width: 120px; outline: none; }
     .search-input:focus { border-color: #90b5e2; box-shadow: 0 0 0 0.2rem rgba(32,107,196,0.2); }
       /* Dark mode: html.theme-dark supports early-script phase before body exists */
     html.theme-dark .hide-theme-dark { display:none !important; }

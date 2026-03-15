@@ -105,17 +105,17 @@
               <h2 class="page-title">Vehículos</h2>
               <div class="text-muted mt-1">Administración de unidades vehiculares</div>
             </div>
-            <div class="col-auto ms-auto d-print-none">
-              <div class="d-flex gap-2 align-items-center">
+            <div class="col-12 col-sm-auto ms-sm-auto d-print-none mt-2 mt-sm-0">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
                 <span id="count-badge" class="badge bg-secondary-subtle text-secondary"></span>
-                <select id="filter-client" class="form-select form-select-sm" style="width:200px" onchange="filterVehicles()">
+                <select id="filter-client" class="form-select form-select-sm" style="min-width:130px;flex:1 1 auto;max-width:200px;" onchange="filterVehicles()">
                   <option value="">Todos los clientes</option>
                 </select>
                 <input type="search" id="search-input" class="form-control form-control-sm"
                        placeholder="Buscar vehículo..." oninput="filterVehicles()"
-                       style="width:180px;">
+                       style="min-width:120px;flex:1 1 auto;max-width:180px;">
                 <button class="btn btn-primary btn-sm" onclick="openAddModal()">
-                  <i class="ti ti-plus me-1"></i>Agregar vehículo
+                  <i class="ti ti-plus me-1"></i><span class="d-none d-sm-inline">Agregar vehículo</span><span class="d-sm-none">Agregar</span>
                 </button>
               </div>
             </div>
@@ -124,7 +124,7 @@
 
         <!-- Summary cards -->
         <div class="row row-deck row-cards mb-3" id="summary-cards" style="display:none">
-          <div class="col-sm-6 col-xl-3">
+          <div class="col-6 col-xl-3">
             <div class="card">
               <div class="card-body">
                 <div class="subheader">Total vehículos</div>
@@ -132,7 +132,7 @@
               </div>
             </div>
           </div>
-          <div class="col-sm-6 col-xl-3">
+          <div class="col-6 col-xl-3">
             <div class="card">
               <div class="card-body">
                 <div class="subheader">Con dispositivo</div>
@@ -140,7 +140,7 @@
               </div>
             </div>
           </div>
-          <div class="col-sm-6 col-xl-3">
+          <div class="col-6 col-xl-3">
             <div class="card">
               <div class="card-body">
                 <div class="subheader">Sin dispositivo</div>
@@ -148,7 +148,7 @@
               </div>
             </div>
           </div>
-          <div class="col-sm-6 col-xl-3">
+          <div class="col-6 col-xl-3">
             <div class="card">
               <div class="card-body">
                 <div class="subheader">Clientes</div>
@@ -220,32 +220,32 @@
             </select>
           </div>
           <!-- Nombre/alias -->
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <label class="form-label required">Nombre / Alias</label>
             <input type="text" class="form-control" id="f-name" placeholder="Ej. Unidad 01" required>
           </div>
           <!-- Placas -->
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <label class="form-label">Placas</label>
             <input type="text" class="form-control" id="f-plate" placeholder="Ej. ABC-1234">
           </div>
           <!-- Marca -->
-          <div class="col-md-4">
+          <div class="col-6 col-md-4">
             <label class="form-label">Marca</label>
             <input type="text" class="form-control" id="f-brand" placeholder="Ej. Kenworth">
           </div>
           <!-- Modelo -->
-          <div class="col-md-4">
+          <div class="col-6 col-md-4">
             <label class="form-label">Modelo</label>
             <input type="text" class="form-control" id="f-model" placeholder="Ej. T680">
           </div>
           <!-- Año -->
-          <div class="col-md-4">
+          <div class="col-6 col-md-4">
             <label class="form-label">Año</label>
             <input type="number" class="form-control" id="f-year" placeholder="Ej. 2022" min="1990" max="2099">
           </div>
           <!-- Color -->
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <label class="form-label">Color</label>
             <div class="input-group">
               <input type="color" class="form-control form-control-color" id="f-color-picker" value="#aaaaaa" title="Elegir color" oninput="document.getElementById('f-color').value=this.value">
@@ -254,7 +254,7 @@
             <div class="form-text">Escribe el nombre o usa el selector.</div>
           </div>
           <!-- Descripción -->
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <label class="form-label">Descripción</label>
             <input type="text" class="form-control" id="f-description" placeholder="Notas adicionales">
           </div>

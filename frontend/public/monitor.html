@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <style>
     .map-wrapper { position: relative; }
-    #map { height: 560px; width: 100%; border-radius: 4px; }
+    #map { height: clamp(280px, 50vh, 560px); width: 100%; border-radius: 4px; }
 
 
     #route-bar { display: none; gap: 6px; align-items: center; }
@@ -141,14 +141,14 @@
             <div class="col">
               <h2 class="page-title" id="page-client-name">Monitor</h2>
             </div>
-            <div class="col-auto ms-auto d-flex gap-2 align-items-center">
-              <select id="route-hours" class="form-select form-select-sm" style="width:160px" onchange="reloadRoute()">
-                <option value="6">Ruta: últimas 6h</option>
-                <option value="24" selected>Ruta: últimas 24h</option>
-                <option value="48">Ruta: últimas 48h</option>
-                <option value="168">Ruta: última semana</option>
+            <div class="col-12 col-sm-auto ms-sm-auto d-flex flex-wrap gap-2 align-items-center mt-2 mt-sm-0">
+              <select id="route-hours" class="form-select form-select-sm" style="min-width:120px;flex:1 1 auto;max-width:180px" onchange="reloadRoute()">
+                <option value="6">6h</option>
+                <option value="24" selected>24h</option>
+                <option value="48">48h</option>
+                <option value="168">1 semana</option>
               </select>
-              <span id="refresh-pill" class="badge bg-secondary-subtle text-muted"></span>
+              <span id="refresh-pill" class="badge bg-secondary-subtle text-muted d-none d-sm-inline"></span>
               <div class="btn-group btn-group-sm" role="group">
                 <button type="button" class="btn btn-primary interval-btn" data-secs="10" onclick="setRefreshInterval(10)">10s</button>
                 <button type="button" class="btn btn-outline-primary interval-btn" data-secs="30" onclick="setRefreshInterval(30)">30s</button>
@@ -176,7 +176,7 @@
                     </button>
                   </div>
                   <!-- Device selector -->
-                  <select id="device-select" class="form-select form-select-sm" style="width:220px" onchange="onDeviceSelect(this.value)">
+                  <select id="device-select" class="form-select form-select-sm" style="min-width:160px;max-width:240px;flex:1 1 auto" onchange="onDeviceSelect(this.value)">
                     <option value="">— Seleccionar unidad —</option>
                   </select>
                   <span id="device-count" class="badge bg-secondary-subtle text-secondary"></span>

@@ -72,7 +72,7 @@
       position: absolute;
       bottom: 16px;
       right: 16px;
-      width: 280px;
+      width: min(280px, calc(100vw - 32px));
       z-index: 500;
       display: none;
     }
@@ -82,11 +82,15 @@
     .badge-offline { background: rgba(148,163,184,.12); color: #94a3b8; }
     .badge-sleep   { background: rgba(245,159,0,.12);  color: #f59f00; }
 
-    /* Sidebar resize handle (optional feel) */
-    @media (max-width: 600px) {
-      .device-sidebar { width: 100%; max-width: 100%; position: absolute; z-index: 600; height: 40%; bottom: 0; border-right: none; border-top: 1px solid var(--tblr-border-color); }
+    @media (max-width: 768px) {
+      .device-sidebar { width: 100%; max-width: 100%; min-width: 0; position: absolute; z-index: 600; height: 42%; bottom: 0; border-right: none; border-top: 1px solid var(--tblr-border-color); }
       .dashboard-body { flex-direction: column; }
       .map-container  { flex: 1; }
+      #detail-panel   { width: min(260px, calc(100vw - 32px)); bottom: 44%; }
+    }
+    @media (max-width: 480px) {
+      .device-sidebar { height: 50%; }
+      #detail-panel   { display: none !important; }
     }
       /* Dark mode: html.theme-dark supports early-script phase before body exists */
     html.theme-dark .hide-theme-dark { display:none !important; }

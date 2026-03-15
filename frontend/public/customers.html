@@ -116,12 +116,12 @@
               <h2 class="page-title">Clientes Recientes</h2>
               <div class="text-muted mt-1">Selecciona un cliente para gestionar sus unidades y dispositivos</div>
             </div>
-            <div class="col-auto ms-auto d-print-none">
+            <div class="col-12 col-sm-auto ms-sm-auto d-print-none mt-2 mt-sm-0">
               <div class="d-flex gap-2 align-items-center">
                 <span id="count-badge" class="badge bg-secondary-subtle text-secondary"></span>
                 <input type="search" id="search-input" class="form-control form-control-sm"
                        placeholder="Buscar clientes..." oninput="filterClients(this.value)"
-                       style="width:220px;">
+                       style="min-width:140px;flex:1 1 auto;max-width:220px;">
               </div>
             </div>
           </div>
@@ -129,25 +129,25 @@
 
         <div class="row row-deck row-cards" id="clients-grid">
           <!-- skeleton -->
-          <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
+          <div class="col-6 col-md-6 col-xl-3">
             <div class="card placeholder-glow" style="min-height:110px">
               <div class="card-body"><div class="placeholder col-8 mb-2"></div><div class="placeholder col-5"></div></div>
               <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
             </div>
           </div>
-          <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
+          <div class="col-6 col-md-6 col-xl-3">
             <div class="card placeholder-glow" style="min-height:110px">
               <div class="card-body"><div class="placeholder col-7 mb-2"></div><div class="placeholder col-4"></div></div>
               <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
             </div>
           </div>
-          <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
+          <div class="col-6 col-md-6 col-xl-3">
             <div class="card placeholder-glow" style="min-height:110px">
               <div class="card-body"><div class="placeholder col-9 mb-2"></div><div class="placeholder col-6"></div></div>
               <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
             </div>
           </div>
-          <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
+          <div class="col-6 col-md-6 col-xl-3">
             <div class="card placeholder-glow" style="min-height:110px">
               <div class="card-body"><div class="placeholder col-6 mb-2"></div><div class="placeholder col-3"></div></div>
               <div class="card-footer p-2"><div class="placeholder col-4"></div></div>
@@ -254,7 +254,7 @@
       const sub = c.business_name && c.business_name !== c.name ? escHtml(c.business_name) : (c.phone_number ? escHtml(c.phone_number) : '');
       const sc = statusClass(c.status);
       return `
-        <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3">
+        <div class="col-6 col-md-6 col-xl-3">
           <div class="card card-link" onclick="viewClient(${c.id})">
             <div class="card-body">
               <div class="d-flex align-items-center mb-2">
