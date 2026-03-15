@@ -141,7 +141,12 @@
                 <option value="168">Ruta: última semana</option>
               </select>
               <span id="refresh-pill" class="badge bg-secondary-subtle text-muted"></span>
-              <button class="btn btn-sm btn-outline-secondary" onclick="manualRefresh()" title="Actualizar">
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-primary interval-btn" data-secs="10" onclick="setRefreshInterval(10)">10s</button>
+                <button type="button" class="btn btn-outline-primary interval-btn" data-secs="30" onclick="setRefreshInterval(30)">30s</button>
+                <button type="button" class="btn btn-outline-primary interval-btn" data-secs="60" onclick="setRefreshInterval(60)">1m</button>
+              </div>
+              <button class="btn btn-sm btn-outline-primary" onclick="manualRefresh()" title="Actualizar">
                 <i class="ti ti-refresh"></i>
               </button>
             </div>
@@ -699,8 +704,19 @@
     loadData(false);
   }
 
+  // ── Interval selector ────────────────────────────────────
+  function setRefreshInterval(secs) {
+    REFRESH_SECS = secs;
+    refreshCountdown = secs;
+    document.querySelectorAll('.interval-btn').forEach(btn => {
+      const selected = parseInt(btn.dataset.secs) === secs;
+      btn.classList.toggle('btn-primary', selected);
+      btn.classList.toggle('btn-outline-primary', !selected);
+    });
+  }
+
   // ── Init ──────────────────────────────────────────────────
-  const REFRESH_SECS = 10;
+  let REFRESH_SECS = 10;
   let refreshCountdown = REFRESH_SECS;
   // initMap() is called by Google Maps API as callback after script loads
 </script>
