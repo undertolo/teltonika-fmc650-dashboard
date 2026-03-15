@@ -5,7 +5,6 @@
   <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.setAttribute('data-bs-theme','dark');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitor — FAHR Electronic Systems</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/tabler.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   <style>
@@ -22,18 +21,6 @@
 
     .star-btn { background: none; border: none; padding: 2px 4px; cursor: pointer; font-size: 1rem; color: var(--tblr-muted); }
     .star-btn.starred { color: #f59f00; }
-
-    /* Pulsing online marker */
-    @keyframes pulse-ring {
-      0%   { transform: scale(1);   opacity: .8; }
-      70%  { transform: scale(2.2); opacity: 0; }
-      100% { transform: scale(2.2); opacity: 0; }
-    }
-    .marker-online { position: relative; display: inline-block; }
-    .marker-online::after {
-      content: ''; position: absolute; inset: 0; border-radius: 50%;
-      background: #2fb344; animation: pulse-ring 2s ease-out infinite;
-    }
 
     /* Countdown pill */
     #refresh-pill { font-size: .7rem; opacity: .65; white-space: nowrap; }
@@ -238,7 +225,6 @@
 </div><!-- /.page -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const BASE_PATH = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
   const API       = window.location.origin + BASE_PATH;
@@ -327,47 +313,88 @@
   }
 
   // ── Map ───────────────────────────────────────────────────
+  const DARK_MAP_STYLE = [
+    { elementType: 'geometry', stylers: [{ color: '#212121' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
+    { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+    { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
+    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#181818' }] },
+    { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2c2c2c' }] },
+    { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373737' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3c3c3c' }] },
+    { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
+    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] }
+  ];
+
+  let infoWindow = null;
+
   function initMap() {
-    map = L.map('map').setView([23.6345, -102.5528], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors', maxZoom: 19
-    }).addTo(map);
-  }
-
-  function deviceIcon(online, selected) {
-    const color = selected ? '#d63939' : online ? '#2fb344' : '#94a3b8';
-    const size  = selected ? 20 : 14;
-    return L.divIcon({
-      html: `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.45)"></div>`,
-      className: '', iconSize: [size, size],
-      iconAnchor: [size/2, size/2], popupAnchor: [0, -(size/2) - 5]
+    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    map = new google.maps.Map(document.getElementById('map'), {
+      center: { lat: 23.6345, lng: -102.5528 },
+      zoom: 6,
+      styles: isDark ? DARK_MAP_STYLE : [],
+      mapTypeControl: true,
+      fullscreenControl: true,
+      streetViewControl: false
     });
+    infoWindow = new google.maps.InfoWindow();
+
+    // Kick off data loading after map is ready
+    loadClientName();
+    loadData(true);
+
+    // Combined 1s ticker: timestamps + countdown + auto-refresh
+    setInterval(async () => {
+      tickTimestamps();
+      refreshCountdown--;
+      const pill = document.getElementById('refresh-pill');
+      if (pill) pill.textContent = refreshCountdown > 0 ? `en ${refreshCountdown}s` : '';
+      if (refreshCountdown <= 0) {
+        refreshCountdown = REFRESH_SECS;
+        await loadData(false);
+      }
+    }, 1000);
   }
 
-  function buildPopup(d) {
+  function makeMarkerIcon(online, selected) {
+    const color = selected ? '#d63939' : online ? '#2fb344' : '#94a3b8';
+    const scale = selected ? 10 : 7;
+    return {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale,
+      fillColor: color,
+      fillOpacity: 1,
+      strokeColor: '#ffffff',
+      strokeWeight: 2
+    };
+  }
+
+  function buildInfoContent(d) {
     const online = isOnline(d.last_seen);
     const ignOn  = d.ignition == 1;
-    return `
-      <div style="min-width:170px">
-        <div class="fw-bold">${escHtml(d.truck_name || 'Sin unidad')}</div>
-        <div class="text-muted font-monospace" style="font-size:.75em">${escHtml(d.imei)}</div>
-        <hr class="my-1">
-        <div>${online
-          ? '<span style="color:#2fb344">● En línea</span>'
-          : '<span style="color:#94a3b8">● Sin conexión</span>'}</div>
-        <div>${ignOn
-          ? '<span style="color:#2fb344"><i class="ti ti-power"></i> Motor encendido</span>'
-          : '<span style="color:#d63939"><i class="ti ti-power"></i> Motor apagado</span>'}</div>
-        ${d.last_speed !== null ? `<div>Velocidad: <b>${d.last_speed} km/h</b></div>` : ''}
-        ${d.last_satellites !== null ? `<div>Satélites: ${d.last_satellites}</div>` : ''}
-        <div class="text-muted mt-1" style="font-size:.78em">${formatDate(d.last_seen)}</div>
-      </div>`;
+    return `<div style="min-width:180px;font-family:sans-serif;font-size:13px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:2px">${escHtml(d.truck_name || 'Sin unidad')}</div>
+      <div style="color:#888;font-family:monospace;font-size:11px;margin-bottom:6px">${escHtml(d.imei)}</div>
+      <div style="margin-bottom:3px">${online
+        ? '<span style="color:#2fb344">● En línea</span>'
+        : '<span style="color:#94a3b8">● Sin conexión</span>'}</div>
+      <div style="margin-bottom:3px">${ignOn
+        ? '<span style="color:#2fb344">⚡ Motor encendido</span>'
+        : '<span style="color:#d63939">⚡ Motor apagado</span>'}</div>
+      ${d.last_speed != null ? `<div>Velocidad: <b>${d.last_speed} km/h</b></div>` : ''}
+      ${d.last_satellites != null ? `<div>Satélites GPS: <b>${d.last_satellites}</b></div>` : ''}
+      <div style="color:#888;font-size:11px;margin-top:6px">${formatDate(d.last_seen)}</div>
+    </div>`;
   }
 
   function updateMarkers() {
+    if (!map) return;
     const active = new Set(allDevices.map(d => d.imei));
     Object.keys(markers).forEach(imei => {
-      if (!active.has(imei)) { map.removeLayer(markers[imei]); delete markers[imei]; }
+      if (!active.has(imei)) { markers[imei].setMap(null); delete markers[imei]; }
     });
 
     let placed = 0;
@@ -375,23 +402,32 @@
       if (!d.last_lat || !d.last_lng) return;
       const online   = isOnline(d.last_seen);
       const selected = d.imei === selectedImei;
+      const pos = { lat: parseFloat(d.last_lat), lng: parseFloat(d.last_lng) };
       if (markers[d.imei]) {
-        markers[d.imei].setLatLng([d.last_lat, d.last_lng]);
-        markers[d.imei].setIcon(deviceIcon(online, selected));
-        markers[d.imei].setPopupContent(buildPopup(d));
+        markers[d.imei].setPosition(pos);
+        markers[d.imei].setIcon(makeMarkerIcon(online, selected));
       } else {
-        const m = L.marker([d.last_lat, d.last_lng], { icon: deviceIcon(online, selected) })
-          .addTo(map)
-          .bindPopup(buildPopup(d));
-        m.on('click', () => selectDevice(d.imei));
+        const m = new google.maps.Marker({
+          position: pos,
+          map,
+          icon: makeMarkerIcon(online, selected),
+          title: d.truck_name || d.imei
+        });
+        m.addListener('click', () => {
+          infoWindow.setContent(buildInfoContent(d));
+          infoWindow.open(map, m);
+          selectDevice(d.imei);
+        });
         markers[d.imei] = m;
       }
+      // Update info content in case data changed
       placed++;
     });
 
     if (!selectedImei && placed > 0) {
-      const group = L.featureGroup(Object.values(markers));
-      try { map.fitBounds(group.getBounds().pad(0.25)); } catch(e) {}
+      const bounds = new google.maps.LatLngBounds();
+      Object.values(markers).forEach(m => bounds.extend(m.getPosition()));
+      try { map.fitBounds(bounds); } catch(e) {}
     }
   }
 
@@ -476,18 +512,22 @@
 
     // Update marker icons
     allDevices.forEach(d => {
-      if (markers[d.imei]) markers[d.imei].setIcon(deviceIcon(isOnline(d.last_seen), d.imei === imei));
+      if (markers[d.imei]) markers[d.imei].setIcon(makeMarkerIcon(isOnline(d.last_seen), d.imei === imei));
     });
 
-    // Center on marker + open popup
+    // Center on marker + open info window
+    const device = allDevices.find(d => d.imei === imei);
     if (markers[imei]) {
-      map.setView(markers[imei].getLatLng(), 15);
-      markers[imei].openPopup();
+      map.panTo(markers[imei].getPosition());
+      map.setZoom(15);
+      if (device) {
+        infoWindow.setContent(buildInfoContent(device));
+        infoWindow.open(map, markers[imei]);
+      }
     }
 
     // Show route bar
-    const device = allDevices.find(d => d.imei === imei);
-    const label  = device ? (device.truck_name || device.imei) : imei;
+    const label = device ? (device.truck_name || device.imei) : imei;
     document.getElementById('route-label').textContent = label;
     document.getElementById('route-bar').style.display = 'flex';
 
@@ -501,13 +541,20 @@
 
   async function loadRoute(imei) {
     const hours = document.getElementById('route-hours').value;
-    if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+    if (routePolyline) { routePolyline.setMap(null); routePolyline = null; }
     try {
       const res  = await fetch(`${API}/api/device/${encodeURIComponent(imei)}/route?hours=${hours}&limit=500`, { headers: authHdr() });
       const data = await res.json();
       if (data.success && data.route.length > 0) {
-        const coords = data.route.slice().reverse().map(p => [p.latitude, p.longitude]);
-        routePolyline = L.polyline(coords, { color: '#206bc4', weight: 3, opacity: .75 }).addTo(map);
+        const path = data.route.slice().reverse().map(p => ({ lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) }));
+        routePolyline = new google.maps.Polyline({
+          path,
+          geodesic: true,
+          strokeColor: '#206bc4',
+          strokeOpacity: 0.75,
+          strokeWeight: 3,
+          map
+        });
       }
     } catch(e) {}
   }
@@ -518,15 +565,20 @@
 
   function clearSelection() {
     selectedImei = null;
-    if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+    if (routePolyline) { routePolyline.setMap(null); routePolyline = null; }
+    infoWindow.close();
     document.getElementById('route-bar').style.display = 'none';
     allDevices.forEach(d => {
-      if (markers[d.imei]) markers[d.imei].setIcon(deviceIcon(isOnline(d.last_seen), false));
+      if (markers[d.imei]) markers[d.imei].setIcon(makeMarkerIcon(isOnline(d.last_seen), false));
     });
     const q = document.getElementById('device-search').value;
     filterTable(q);
-    const ml = Object.values(markers);
-    if (ml.length) try { map.fitBounds(L.featureGroup(ml).getBounds().pad(0.25)); } catch(e) {}
+    const mList = Object.values(markers);
+    if (mList.length) {
+      const bounds = new google.maps.LatLngBounds();
+      mList.forEach(m => bounds.extend(m.getPosition()));
+      try { map.fitBounds(bounds); } catch(e) {}
+    }
   }
 
   // ── Silent in-place update (no full re-render) ────────────
@@ -650,22 +702,10 @@
   // ── Init ──────────────────────────────────────────────────
   const REFRESH_SECS = 10;
   let refreshCountdown = REFRESH_SECS;
-
-  initMap();
-  loadClientName();
-  loadData(true);
-
-  // Combined 1s ticker: timestamps + countdown + auto-refresh
-  setInterval(async () => {
-    tickTimestamps();
-    refreshCountdown--;
-    const pill = document.getElementById('refresh-pill');
-    if (pill) pill.textContent = refreshCountdown > 0 ? `en ${refreshCountdown}s` : '';
-    if (refreshCountdown <= 0) {
-      refreshCountdown = REFRESH_SECS;
-      await loadData(false);
-    }
-  }, 1000);
+  // initMap() is called by Google Maps API as callback after script loads
+</script>
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDBRtzvm22YwD_ukdtpI7P4FuCWYPv-xNE&callback=initMap">
 </script>
 </body>
 </html>
