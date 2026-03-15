@@ -411,6 +411,52 @@ const db = {
     return rows;
   },
 
+  async getDevicePlate(imei) {
+    const [[row]] = await pool.query(
+      `SELECT t.plate FROM devices d JOIN trucks t ON t.id = d.truck_id WHERE d.imei = ?`,
+      [imei]
+    );
+    return row?.plate || null;
+  },
+
+  async getDeviceDashboard(imei) {
+    const [[device]] = await pool.query('SELECT id FROM devices WHERE imei = ?', [imei]);
+    if (!device) return null;
+    const [[gps]] = await pool.query(
+      'SELECT * FROM gps_data WHERE device_id = ? ORDER BY id DESC LIMIT 1', [device.id]
+    );
+    if (!gps) return null;
+    const [ios] = await pool.query(
+      'SELECT io_id, io_value FROM io_data WHERE gps_record_id = ?', [gps.id]
+    );
+    const io = {};
+    ios.forEach(r => { io[r.io_id] = r.io_value; });
+    return {
+      timestamp:       gps.timestamp,
+      latitude:        gps.latitude,
+      longitude:       gps.longitude,
+      speed:           gps.speed,
+      angle:           gps.angle,
+      satellites:      gps.satellites,
+      altitude:        gps.altitude,
+      signal:          io[21]  ?? null,
+      rpm:             io[36]  ?? null,
+      obd_speed:       io[37]  ?? null,
+      throttle:        io[31]  ?? null,
+      engine_load:     io[32]  ?? null,
+      fuel_level:      io[41]  ?? null,
+      dtc_count:       io[42]  ?? null,
+      oil_pressure:    io[43]  ?? null,
+      coolant_temp:    io[57]  ?? null,
+      ext_voltage:     io[66]  ?? null,
+      battery_mv:      io[67]  ?? null,
+      battery_current: io[68]  ?? null,
+      mileage_m:       io[16]  ?? null,
+      ignition:        io[239] ?? null,
+      movement:        io[240] ?? null,
+    };
+  },
+
   // Health check
   async healthCheck() {
     try {
@@ -459,6 +505,25 @@ const fahrDb = {
       WHERE client_id = ?
     `, [clientId]);
     return rows;
+  },
+
+  async getDeviceJ1939ByPlate(plate) {
+    if (!plate) return null;
+    const [[row]] = await fahrPool.query(`
+      SELECT d.pid_engine_rpm, d.pid_vehicle_speed, d.pid_coolant_temp,
+             d.pid_battery_voltage, d.pid_oil_pressure,
+             d.fuel_rate, d.fuel_level, d.inst_fuel_eco, d.avg_fuel_eco,
+             d.ecu_err_code, d.ecu_err_code1, d.lamp_status, d.lamp_status1,
+             d.j939_control, d.can_status, d.bat_status,
+             d.gprs_rssi, d.gps_num_sat, d.edited_at
+      FROM device d
+      JOIN device_vehicle dv ON dv.device_id = d.id AND dv.deleted_at IS NULL
+      JOIN vehicle v ON v.id = dv.vehicle_id AND v.deleted_at IS NULL
+      WHERE v.plates = ? AND d.deleted_at IS NULL
+      ORDER BY d.edited_at DESC
+      LIMIT 1
+    `, [plate]);
+    return row || null;
   }
 };
 

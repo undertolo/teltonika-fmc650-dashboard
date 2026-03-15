@@ -181,6 +181,20 @@ app.delete('/api/users/:id', requireAuth, requireRole('superuser'), async (req, 
 
 // ==================== RUTAS DE CLIENTES ====================
 
+// GET /api/device/:imei/dashboard
+app.get('/api/device/:imei/dashboard', requireAuth, async (req, res) => {
+  try {
+    const data = await db.getDeviceDashboard(req.params.imei);
+    if (!data) return res.status(404).json({ success: false, error: 'Device not found' });
+    // Enrich with J1939 data from fahr_production via plate matching
+    const plate = await db.getDevicePlate(req.params.imei);
+    const j1939 = plate ? await fahrDb.getDeviceJ1939ByPlate(plate) : null;
+    res.json({ success: true, data: { ...data, j1939 } });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // GET /api/clients - Lista de clientes (admin/superuser)
 app.get('/api/clients', requireAuth, requireRole('admin', 'superuser'), async (req, res) => {
   try {
