@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.setAttribute('data-bs-theme','dark');</script>
+  <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.classList.add('theme-dark');</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dispositivos — FAHR Electronic Systems</title>
   <link rel="stylesheet" href="css/tabler.min.css">
@@ -21,6 +21,9 @@
     .table td { vertical-align: middle; }
     #refresh-indicator { font-size: .75rem; transition: opacity .3s; }
     #refresh-indicator.refreshing { opacity: .5; }
+      /* Dark mode: html.theme-dark supports early-script phase before body exists */
+    html.theme-dark .hide-theme-dark { display:none !important; }
+    html:not(.theme-dark) body:not(.theme-dark) .hide-theme-light { display:none !important; }
   </style>
 </head>
 <body>
@@ -272,13 +275,14 @@
   // Dark mode
   (function() {
     if (localStorage.getItem('darkMode') === 'true') {
-      document.documentElement.setAttribute('data-bs-theme', 'dark');
+      document.body.classList.add('theme-dark');
+      document.documentElement.classList.add('theme-dark');
     }
   })();
   function toggleDarkMode() {
-    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    document.documentElement.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
-    localStorage.setItem('darkMode', (!isDark).toString());
+    const isDark = document.body.classList.toggle('theme-dark');
+    document.documentElement.classList.toggle('theme-dark', isDark);
+    localStorage.setItem('darkMode', isDark.toString());
   }
   function doLogout() {
     localStorage.removeItem('token');
