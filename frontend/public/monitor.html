@@ -201,7 +201,7 @@
                       <th>Vehículo</th>
                       <th>Dispositivo</th>
                       <th>Motor</th>
-                      <th>Señal</th>
+                      <th>Estado</th>
                       <th style="width:20px"></th>
                     </tr>
                   </thead>
@@ -309,7 +309,7 @@
   let allDevices   = [];
   let selectedImei = null;
   let favorites    = new Set(JSON.parse(localStorage.getItem('fahr_favs') || '[]'));
-  const ONLINE_MS  = 5 * 60 * 1000;
+  const ONLINE_MS  = 60 * 1000;
 
   function isOnline(last_seen) {
     return last_seen && (Date.now() - new Date(last_seen).getTime()) < ONLINE_MS;
@@ -432,7 +432,6 @@
       const onlineBadge = online
         ? `<span class="badge bg-success-lt"><i class="ti ti-wifi me-1"></i>En línea</span>`
         : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
-      const sigHtml = signalHtml(d.signal_level);
       const batHtml = batteryHtml(d.battery_mv);
 
       return `<tr class="device-row${active}" data-imei="${escHtml(d.imei)}" onclick="selectDevice('${escHtml(d.imei)}')">
@@ -442,7 +441,7 @@
           <small class="text-muted" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>
         </td>
         <td>${ignBadge}${speedHtml}</td>
-        <td>${onlineBadge}<small class="d-block mt-1">${sigHtml}</small>${batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : ''}</td>
+        <td>${onlineBadge}${batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : ''}</td>
         <td onclick="event.stopPropagation()">
           <button class="star-btn${isFav ? ' starred' : ''}" onclick="toggleFav('${escHtml(d.imei)}')" title="${isFav ? 'Quitar favorito' : 'Agregar favorito'}">
             <i class="ti ti-star${isFav ? '-filled' : ''}"></i>
@@ -562,7 +561,6 @@
         : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
       const batHtml = batteryHtml(d.battery_mv);
       row.cells[3].innerHTML = onlineBadge
-        + `<small class="d-block mt-1">${signalHtml(d.signal_level)}</small>`
         + (batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : '');
 
       // Update data-ts so ticker picks it up
