@@ -306,8 +306,10 @@
   const roleColors = { superuser: '#ae3ec9', admin: '#d63939', owner: '#f76707', driver: '#2fb344' };
   if (user) {
     const color = roleColors[user.role] || '#206bc4';
-    document.getElementById('nav-avatar').textContent = (user.name || user.username || '?')[0].toUpperCase();
-    document.getElementById('nav-avatar').style.background = color;
+    document.getElementById('nav-avatar').innerHTML = '<i class="ti ti-user" style="font-size:1rem"></i>';
+    document.getElementById('nav-avatar').style.background = '#4dabf720';
+    document.getElementById('nav-avatar').style.border = '2px solid #4dabf7';
+    document.getElementById('nav-avatar').style.color = '#4dabf7';
     document.getElementById('nav-user-name').textContent = user.name || user.username;
     document.getElementById('nav-user-role').textContent = user.role;
     if (user.role === 'admin' || user.role === 'superuser') {
