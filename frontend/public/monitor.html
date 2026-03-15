@@ -32,15 +32,16 @@
     #refresh-pill { font-size: .7rem; opacity: .65; white-space: nowrap; }
 
     /* ── Dashboard modal ── */
-    #dashboardModal .modal-content { background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; }
-    #dashboardModal .modal-header  { border-bottom: 1px solid #1e293b; }
-    #dashboardModal .modal-footer  { border-top: 1px solid #1e293b; }
-    #dashboardModal .dash-card     { background: #1e293b; border-radius: 12px; padding: 1rem; text-align: center; }
-    #dashboardModal .dash-label    { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-bottom: .25rem; }
-    #dashboardModal .dash-value    { font-size: 1.6rem; font-weight: 700; font-family: monospace; line-height: 1.1; }
-    #dashboardModal .dash-unit     { font-size: .75rem; color: #64748b; }
-    #dashboardModal .dash-badge    { font-size: .8rem; padding: .35em .75em; border-radius: 20px; }
-    #dashboardModal .gauge-wrap    { display: flex; justify-content: center; }
+    #dashboardModal .modal-content  { background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; }
+    #dashboardModal .modal-header   { border-bottom: 1px solid #1e293b; }
+    #dashboardModal .modal-footer   { border-top: 1px solid #1e293b; }
+    #dashboardModal .dash-card      { background: #1e293b; border-radius: 10px; padding: .75rem; }
+    #dashboardModal .dash-label     { font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; color: #64748b; margin-bottom: .15rem; }
+    #dashboardModal .dash-stat-label{ font-size: .7rem; color: #94a3b8; }
+    #dashboardModal .dash-stat-val  { font-size: 1.1rem; font-weight: 700; font-family: monospace; color: #e2e8f0; }
+    #dashboardModal .dash-stat-unit { font-size: .7rem; color: #64748b; font-weight: 400; }
+    #dashboardModal .dash-badge     { font-size: .7rem; padding: .3em .6em; border-radius: 20px; display: inline-block; }
+    #dashboardModal .gauge-wrap     { display: flex; justify-content: center; }
     .dtc-chip { display: inline-block; background: #7f1d1d; color: #fca5a5; border-radius: 6px; padding: 2px 8px; font-size: .75rem; font-family: monospace; margin: 2px; }
   </style>
 </head>
@@ -299,7 +300,7 @@
 
 <!-- ── Dashboard Modal ────────────────────────────────── -->
 <div class="modal modal-blur fade" id="dashboardModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
+  <div class="modal-dialog modal-xl modal-fullscreen-md-down modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <div>
@@ -312,106 +313,131 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
       </div>
-      <div class="modal-body p-3">
-        <!-- Row 1: Main Gauges -->
-        <div class="row g-3 mb-3">
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-speedometer me-1"></i>Velocidad</div>
-              <div class="gauge-wrap" id="dash-gauge-speed"></div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-engine me-1"></i>RPM Motor</div>
-              <div class="gauge-wrap" id="dash-gauge-rpm"></div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-temperature me-1"></i>Temp. Refrigerante</div>
-              <div class="gauge-wrap" id="dash-gauge-coolant"></div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-flame me-1"></i>Nivel Combustible</div>
-              <div class="gauge-wrap" id="dash-gauge-fuel"></div>
-            </div>
-          </div>
-        </div>
-        <!-- Row 2: Stat cards -->
-        <div class="row g-3 mb-3">
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-gauge me-1"></i>Presión de Aceite</div>
-              <div class="dash-value" id="dash-oil" style="color:#f59f00">—</div>
-              <div class="dash-unit">PSI</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-bolt me-1"></i>Voltaje Batería</div>
-              <div class="dash-value text-info" id="dash-battery">—</div>
-              <div class="dash-unit">V</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-road me-1"></i>Kilometraje</div>
-              <div class="dash-value text-cyan" id="dash-mileage">—</div>
-              <div class="dash-unit">km</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-droplet me-1"></i>Flujo Combustible</div>
-              <div class="dash-value text-orange" id="dash-fuel-rate">—</div>
-              <div class="dash-unit">L/h</div>
-            </div>
-          </div>
-        </div>
-        <!-- Row 3: Fuel economy + Status -->
-        <div class="row g-3 mb-3">
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-leaf me-1"></i>Eco Inst.</div>
-              <div class="dash-value text-green" id="dash-fuel-inst">—</div>
-              <div class="dash-unit">km/L</div>
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <div class="dash-card">
-              <div class="dash-label"><i class="ti ti-leaf me-1"></i>Eco Promedio</div>
-              <div class="dash-value text-green" id="dash-fuel-avg">—</div>
-              <div class="dash-unit">km/L</div>
-            </div>
-          </div>
-          <div class="col-12 col-md-6">
-            <div class="dash-card h-100">
-              <div class="dash-label mb-2">Estado del Sistema</div>
-              <div class="d-flex flex-wrap gap-2 justify-content-center">
-                <span class="dash-badge" id="dash-ignition">—</span>
-                <span class="dash-badge" id="dash-movement">—</span>
-                <span class="dash-badge" id="dash-j939">—</span>
-                <span class="dash-badge bg-secondary text-white" id="dash-satellites">— sat.</span>
-                <span class="dash-badge bg-secondary text-white" id="dash-signal">— dBm</span>
-                <span class="dash-badge bg-secondary text-white" id="dash-altitude">— m</span>
+      <div class="modal-body p-2" style="background:#172033">
+        <div class="row g-2">
+
+          <!-- ── Left sidebar: fuel stats ───────────────────────── -->
+          <div class="col-12 col-md-3">
+            <div class="row g-2">
+              <div class="col-6 col-md-12">
+                <div class="dash-card">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto"><span class="avatar avatar-sm" style="background:#2fb34420;color:#2fb344"><i class="ti ti-seeding"></i></span></div>
+                    <div class="col">
+                      <div class="dash-stat-label">Fuel_RT</div>
+                      <div class="dash-stat-val"><strong id="dash-fuel-rate">—</strong> <span class="dash-stat-unit">lt/hr</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-md-12">
+                <div class="dash-card">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto"><span class="avatar avatar-sm" style="background:#2fb34420;color:#2fb344"><i class="ti ti-seeding"></i></span></div>
+                    <div class="col">
+                      <div class="dash-stat-label">Fuel_INST</div>
+                      <div class="dash-stat-val"><strong id="dash-fuel-inst">—</strong> <span class="dash-stat-unit">km/lt</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-md-12">
+                <div class="dash-card">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto"><span class="avatar avatar-sm" style="background:#2fb34420;color:#2fb344"><i class="ti ti-seeding"></i></span></div>
+                    <div class="col">
+                      <div class="dash-stat-label">Fuel_AVG</div>
+                      <div class="dash-stat-val"><strong id="dash-fuel-avg">—</strong> <span class="dash-stat-unit">km/lt</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-md-12">
+                <div class="dash-card">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto"><span class="avatar avatar-sm" style="background:#206bc420;color:#4dabf7"><i class="ti ti-road"></i></span></div>
+                    <div class="col">
+                      <div class="dash-stat-label">KM_TOT</div>
+                      <div class="dash-stat-val"><strong id="dash-mileage">—</strong> <span class="dash-stat-unit">km</span></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <!-- Row 4: DTC -->
-        <div class="row g-3">
+
+          <!-- ── Main gauges area ───────────────────────────────── -->
+          <div class="col-12 col-md-9">
+            <!-- Top row: Speed + Status + RPM -->
+            <div class="row g-2 mb-2">
+              <!-- Speed gauge -->
+              <div class="col-5 col-md-5">
+                <div class="dash-card text-center">
+                  <div class="dash-label mb-1"><i class="ti ti-speedometer me-1"></i>Velocidad <span class="dash-stat-unit">km/h</span></div>
+                  <div class="gauge-wrap" id="dash-gauge-speed"></div>
+                </div>
+              </div>
+              <!-- Status column -->
+              <div class="col-2 col-md-2">
+                <div class="dash-card h-100 d-flex flex-column justify-content-center gap-2 align-items-center px-1">
+                  <div class="text-center" style="font-size:.6rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Estado</div>
+                  <span class="dash-badge w-100 text-center" id="dash-ignition" style="font-size:.7rem">—</span>
+                  <span class="dash-badge w-100 text-center" id="dash-j939" style="font-size:.7rem">—</span>
+                  <span class="dash-badge w-100 text-center bg-secondary text-white" id="dash-satellites" style="font-size:.7rem">— sat.</span>
+                  <span class="dash-badge w-100 text-center bg-secondary text-white" id="dash-signal" style="font-size:.7rem">— dBm</span>
+                  <span class="dash-badge w-100 text-center bg-secondary text-white" id="dash-altitude" style="font-size:.7rem">— m</span>
+                </div>
+              </div>
+              <!-- RPM gauge -->
+              <div class="col-5 col-md-5">
+                <div class="dash-card text-center">
+                  <div class="dash-label mb-1"><i class="ti ti-engine me-1"></i>RPM Motor</div>
+                  <div class="gauge-wrap" id="dash-gauge-rpm"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Bottom row: 4 medium gauges -->
+            <div class="row g-2">
+              <div class="col-6 col-md-3">
+                <div class="dash-card text-center">
+                  <div class="dash-label mb-1"><i class="ti ti-temperature me-1"></i>Temperatura <span class="dash-stat-unit">°C</span></div>
+                  <div class="gauge-wrap" id="dash-gauge-coolant"></div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="dash-card text-center">
+                  <div class="dash-label mb-1"><i class="ti ti-gas-station me-1"></i>Combustible <span class="dash-stat-unit">%</span></div>
+                  <div class="gauge-wrap" id="dash-gauge-fuel"></div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="dash-card text-center">
+                  <div class="dash-label mb-1"><i class="ti ti-battery-automotive me-1"></i>Batería <span class="dash-stat-unit">V</span></div>
+                  <div class="gauge-wrap" id="dash-gauge-battery"></div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="dash-card text-center">
+                  <div class="dash-label mb-1"><i class="ti ti-drop-circle me-1"></i>Aceite <span class="dash-stat-unit">PSI</span></div>
+                  <div class="gauge-wrap" id="dash-gauge-oil"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── DTC row ─────────────────────────────────────────── -->
           <div class="col-12">
             <div class="dash-card">
-              <div class="dash-label mb-2"><i class="ti ti-alert-triangle me-1"></i>Códigos de Diagnóstico (DTC)</div>
-              <div id="dash-dtc-wrap" class="d-flex flex-wrap gap-1 justify-content-center">
-                <span class="text-muted small">Sin códigos de error</span>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="dash-label mb-0"><i class="ti ti-alert-triangle me-1"></i>Diagnóstico (DTC)</span>
+                <div id="dash-lamp-wrap" class="d-flex flex-wrap gap-1"></div>
               </div>
-              <div id="dash-lamp-wrap" class="mt-2 d-flex flex-wrap gap-1 justify-content-center"></div>
+              <div id="dash-dtc-wrap" class="d-flex flex-wrap gap-1">
+                <span class="text-muted small">✅ Sin códigos de error</span>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
       <div class="modal-footer justify-content-between">
@@ -892,37 +918,44 @@
   let dashModal = null;
   let dashTimer = null;
 
-  // opts: { lowWarn, highWarn, reverse } — reverse=true means low value = bad (e.g. oil pressure)
-  function drawGauge(value, max, unit, baseColor, opts = {}) {
-    const r = 72;
+  // thresholds: array of {at, color} sorted ascending — color applied from 'at' upward
+  function gaugeColor(v, thresholds) {
+    let color = thresholds[0].color;
+    for (const t of thresholds) { if (v >= t.at) color = t.color; }
+    return color;
+  }
+
+  function drawGauge(value, max, thresholds, size = 140) {
+    const r = size * 0.45;
+    const cx = size / 2, cy = size / 2;
     const circ = 2 * Math.PI * r;
     const arcLen = circ * 0.75;
-    const v = Math.max(0, Math.min(parseFloat(value ?? 0), max));
-    const pct = v / max;
-    let color = value == null ? '#334155' : baseColor;
-    if (value != null) {
-      if (opts.highWarn != null && v >= opts.highWarn) color = '#f03e3e';
-      else if (opts.lowWarn != null && v <= opts.lowWarn) color = (opts.reverse ? '#f03e3e' : '#f59f00');
-      else if (!opts.highWarn && !opts.lowWarn && pct > 0.9) color = '#f03e3e';
-      else if (!opts.highWarn && !opts.lowWarn && pct > 0.75) color = '#f59f00';
-    }
-    const valueDash = pct * arcLen;
     const raw = value != null ? parseFloat(value) : null;
-    const display = raw != null ? (Number.isInteger(raw) ? raw : raw.toFixed(1)) : '—';
-    const fs = display.toString().length > 5 ? 16 : display.toString().length > 3 ? 20 : 26;
-    const maxLabel = Number.isInteger(max) ? max : max.toFixed(0);
-    return `<svg viewBox="0 0 160 160" style="width:140px;height:140px">
-      <circle cx="80" cy="80" r="${r}" fill="none" stroke="#1e293b" stroke-width="14"
-        stroke-dasharray="${arcLen} ${circ - arcLen}" transform="rotate(135,80,80)" stroke-linecap="round"/>
-      <circle cx="80" cy="80" r="${r}" fill="none" stroke="${color}" stroke-width="14"
-        stroke-dasharray="${valueDash} ${circ - valueDash}" transform="rotate(135,80,80)" stroke-linecap="round"/>
-      <text x="80" y="88" text-anchor="middle" fill="#e2e8f0" font-family="monospace"
-        font-size="${fs}" font-weight="bold">${display}</text>
-      <text x="80" y="106" text-anchor="middle" fill="#64748b" font-size="11">${unit}</text>
-      <text x="12" y="148" fill="#475569" font-size="9" font-family="monospace">0</text>
-      <text x="${maxLabel.toString().length > 3 ? 112 : 120}" y="148" fill="#475569" font-size="9" font-family="monospace">${maxLabel}</text>
+    const v = raw != null ? Math.max(0, Math.min(raw, max)) : 0;
+    const pct = v / max;
+    const color = raw == null ? '#334155' : gaugeColor(v, thresholds);
+    const valueDash = pct * arcLen;
+    const display = raw != null ? (raw >= 100 ? Math.round(raw) : raw % 1 === 0 ? raw : parseFloat(raw.toFixed(1))) : '—';
+    const fs = display.toString().length > 4 ? Math.round(size * 0.12) : Math.round(size * 0.16);
+    return `<svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#243049" stroke-width="${Math.round(size*0.09)}"
+        stroke-dasharray="${arcLen} ${circ-arcLen}" transform="rotate(135,${cx},${cy})" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${Math.round(size*0.09)}"
+        stroke-dasharray="${valueDash} ${circ-valueDash}" transform="rotate(135,${cx},${cy})" stroke-linecap="round"/>
+      <text x="${cx}" y="${cy+fs*0.35}" text-anchor="middle" fill="#e2e8f0" font-family="monospace"
+        font-size="${fs}" font-weight="700">${display}</text>
     </svg>`;
   }
+
+  // Threshold configs matching Angular
+  const T = {
+    speed:    [{at:0,color:'#2fb344'},{at:80,color:'#f59f00'},{at:140,color:'#f03e3e'}],
+    rpm:      [{at:0,color:'#2fb344'},{at:2000,color:'#f03e3e'}],
+    coolant:  [{at:0,color:'#2fb344'},{at:75,color:'#f59f00'},{at:100,color:'#f03e3e'}],
+    fuel:     [{at:0,color:'#f03e3e'},{at:25,color:'#f59f00'},{at:50,color:'#2fb344'}],
+    battery:  [{at:0,color:'#f03e3e'},{at:3,color:'#f59f00'},{at:12,color:'#2fb344'}],
+    oil:      [{at:0,color:'#f03e3e'},{at:25,color:'#f59f00'},{at:50,color:'#2fb344'}],
+  };
 
   function parseDTCs(errCode) {
     if (!errCode || errCode === '0') return [];
@@ -954,49 +987,39 @@
       ? '<span class="badge bg-success">En línea</span>'
       : '<span class="badge bg-secondary">Sin conexión</span>';
 
-    // Row 1 Gauges (from J1939 if available, fallback to teltonika IO)
-    const speed = j.pid_vehicle_speed != null ? parseInt(j.pid_vehicle_speed) : (d.obd_speed ?? d.speed ?? null);
-    const rpm   = j.pid_engine_rpm    != null ? parseInt(j.pid_engine_rpm)    : (d.rpm ?? null);
-    const cool  = j.pid_coolant_temp  != null ? parseInt(j.pid_coolant_temp)  : (d.coolant_temp ?? null);
-    const fuel  = j.fuel_level        != null ? parseInt(j.fuel_level)        : (d.fuel_level ?? null);
+    // J1939 values with teltonika IO fallbacks
+    const speed  = j.pid_vehicle_speed   != null ? parseInt(j.pid_vehicle_speed)    : (d.obd_speed ?? d.speed ?? null);
+    const rpm    = j.pid_engine_rpm      != null ? parseInt(j.pid_engine_rpm)       : (d.rpm ?? null);
+    const cool   = j.pid_coolant_temp    != null ? parseInt(j.pid_coolant_temp)     : (d.coolant_temp ?? null);
+    const fuel   = j.fuel_level          != null ? parseInt(j.fuel_level)           : (d.fuel_level ?? null);
+    const batV   = j.pid_battery_voltage != null ? parseFloat(j.pid_battery_voltage): (d.battery_mv != null ? d.battery_mv/1000 : null);
+    const oil    = j.pid_oil_pressure    != null ? parseFloat(j.pid_oil_pressure)   : (d.oil_pressure ?? null);
 
-    document.getElementById('dash-gauge-speed').innerHTML   = drawGauge(speed, 120, 'km/h', '#2fb344', { highWarn: 115 });
-    document.getElementById('dash-gauge-rpm').innerHTML     = drawGauge(rpm,   4000, 'RPM',  '#4dabf7');
-    document.getElementById('dash-gauge-coolant').innerHTML = drawGauge(cool,  120,  '°C',   '#4dabf7', { highWarn: 104 });
-    document.getElementById('dash-gauge-fuel').innerHTML    = drawGauge(fuel,  100,  '%',    '#f59f00', { lowWarn: 20, reverse: false });
+    // Large gauges (260px) — speed & RPM
+    document.getElementById('dash-gauge-speed').innerHTML = drawGauge(speed, 160, T.speed, 260);
+    document.getElementById('dash-gauge-rpm').innerHTML   = drawGauge(rpm,  2500, T.rpm,   260);
 
-    // Row 2 Stat cards
-    const oil      = j.pid_oil_pressure  != null ? parseFloat(j.pid_oil_pressure)  : (d.oil_pressure ?? null);
-    const batV     = j.pid_battery_voltage != null ? parseFloat(j.pid_battery_voltage) : (d.battery_mv != null ? (d.battery_mv/1000) : null);
-    const mileage  = d.mileage_m != null ? Math.round(d.mileage_m / 1000).toLocaleString() : '—';
-    const fuelRate = j.fuel_rate != null ? parseFloat(j.fuel_rate).toFixed(1) : '—';
+    // Medium gauges (160px) — coolant, fuel, battery, oil
+    document.getElementById('dash-gauge-coolant').innerHTML  = drawGauge(cool,  126, T.coolant, 160);
+    document.getElementById('dash-gauge-fuel').innerHTML     = drawGauge(fuel,  100, T.fuel,    160);
+    document.getElementById('dash-gauge-battery').innerHTML  = drawGauge(batV,   16, T.battery, 160);
+    document.getElementById('dash-gauge-oil').innerHTML      = drawGauge(oil,   100, T.oil,     160);
 
-    const oilEl = document.getElementById('dash-oil');
-    oilEl.textContent = oil != null ? oil : '—';
-    oilEl.style.color = oil != null && oil < 5 ? '#f03e3e' : oil != null && oil < 20 ? '#f59f00' : '#f59f00';
-
-    document.getElementById('dash-battery').textContent  = batV  != null ? batV.toFixed(2) : '—';
-    document.getElementById('dash-mileage').textContent  = mileage;
-    document.getElementById('dash-fuel-rate').textContent = fuelRate;
-
-    // Row 3 Fuel economy
-    const instEco = j.inst_fuel_eco != null ? parseFloat(j.inst_fuel_eco).toFixed(2) : '—';
-    const avgEco  = j.avg_fuel_eco  != null ? parseFloat(j.avg_fuel_eco).toFixed(2)  : '—';
-    document.getElementById('dash-fuel-inst').textContent = instEco;
-    document.getElementById('dash-fuel-avg').textContent  = avgEco;
+    // Left sidebar stats
+    document.getElementById('dash-fuel-rate').textContent = j.fuel_rate    != null ? parseFloat(j.fuel_rate).toFixed(1)    : '—';
+    document.getElementById('dash-fuel-inst').textContent = j.inst_fuel_eco != null ? parseFloat(j.inst_fuel_eco).toFixed(2) : '—';
+    document.getElementById('dash-fuel-avg').textContent  = j.avg_fuel_eco  != null ? parseFloat(j.avg_fuel_eco).toFixed(2)  : '—';
+    document.getElementById('dash-mileage').textContent   = d.mileage_m     != null ? Math.round(d.mileage_m/1000).toLocaleString() : '—';
 
     // Status badges
-    const ignOn = d.ignition == 1;
-    document.getElementById('dash-ignition').className = 'dash-badge ' + (ignOn ? 'bg-success text-white' : 'bg-danger text-white');
-    document.getElementById('dash-ignition').textContent = ignOn ? '⚡ Motor ON' : '⚡ Motor OFF';
-
-    const moving = d.movement == 1;
-    document.getElementById('dash-movement').className = 'dash-badge ' + (moving ? 'bg-blue text-white' : 'bg-secondary text-white');
-    document.getElementById('dash-movement').textContent = moving ? '🚚 En movimiento' : '🅿 Detenido';
+    const canOn = j.can_status == 1;
+    document.getElementById('dash-ignition').className   = 'dash-badge w-100 text-center ' + (canOn ? 'bg-success text-white' : 'bg-danger text-white');
+    document.getElementById('dash-ignition').textContent = canOn ? '● Motor ON' : '● Motor OFF';
 
     const j939Active = j.j939_control == 2;
-    document.getElementById('dash-j939').className = 'dash-badge ' + (j939Active ? 'bg-success text-white' : 'bg-secondary text-white');
-    document.getElementById('dash-j939').textContent = j939Active ? '🔌 J1939 Activo' : '🔌 J1939 Inactivo';
+    document.getElementById('dash-j939').className   = 'dash-badge w-100 text-center ' + (j939Active ? '' : 'bg-secondary text-white');
+    document.getElementById('dash-j939').style.cssText = j939Active ? 'background:#1e3a5f;color:#93c5fd;' : '';
+    document.getElementById('dash-j939').textContent = j939Active ? '⚡ J1939' : '○ J1939';
 
     const sats = j.gps_num_sat != null ? parseInt(j.gps_num_sat) : d.satellites;
     const sig  = j.gprs_rssi   != null ? parseInt(j.gprs_rssi)   : d.signal;
@@ -1021,8 +1044,7 @@
     const lampEl = document.getElementById('dash-lamp-wrap');
     const lamps = parseLamps(j.lamp_status || j.lamp_status1);
     const lampItems = [];
-    // LSAW=1 means Amber Warning lamp ON; LSMFI=0 means MIL ON
-    if (lamps.LSAW === 1) lampItems.push('<span class="dash-badge" style="background:#854d0e;color:#fef08a">⚠ Amber Warning</span>');
+    if (lamps.LSAW === 1) lampItems.push('<span class="dash-badge" style="background:#854d0e;color:#fef08a">⚠ Amber</span>');
     if (lamps.LSRS === 1) lampItems.push('<span class="dash-badge" style="background:#7f1d1d;color:#fca5a5">🛑 Red Stop</span>');
     if (lamps.LSMFI === 0 && Object.keys(lamps).length > 0) lampItems.push('<span class="dash-badge" style="background:#1e3a5f;color:#93c5fd">🔧 MIL</span>');
     lampEl.innerHTML = lampItems.join('');
