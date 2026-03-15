@@ -553,7 +553,11 @@
         ? `<small class="text-muted d-block mt-1"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</small>` : '';
       row.cells[2].innerHTML = ignBadge + speedHtml;
 
-      // Señal cell (index 3)
+      // Update data-ts in Dispositivo cell (index 1) so ticker stays current
+      const tsEl = row.cells[1].querySelector('[data-ts]');
+      if (tsEl) tsEl.dataset.ts = d.last_seen || '';
+
+      // Estado cell (index 3)
       const onlineBadge = online
         ? `<span class="badge bg-success-lt"><i class="ti ti-wifi me-1"></i>En línea</span>`
         : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
