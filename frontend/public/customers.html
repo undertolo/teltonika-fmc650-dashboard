@@ -266,6 +266,7 @@
               <div class="row g-1">
                 <div class="col-auto"><span class="badge bg-orange-lt"><i class="ti ti-truck me-1"></i>${c.truck_count} unidad${c.truck_count!==1?'es':''}</span></div>
                 <div class="col-auto"><span class="badge bg-blue-lt"><i class="ti ti-router me-1"></i>${c.device_count} disp.</span></div>
+                <div class="col-auto"><span class="badge ${satBadgeClass(c.avg_satellites)}"><i class="ti ti-satellite me-1"></i>${c.avg_satellites !== null && c.avg_satellites !== undefined ? c.avg_satellites + ' sat.' : 'N/D'}</span></div>
               </div>
             </div>
           </div>
@@ -290,6 +291,11 @@
       <div class="empty-icon text-danger"><i class="ti ti-alert-triangle" style="font-size:3rem"></i></div>
       <p class="empty-title">Error</p><p class="empty-subtitle text-danger">${escHtml(msg)}</p>
     </div></div></div>`;
+  }
+
+  function satBadgeClass(sats) {
+    if (sats === null || sats === undefined) return 'bg-secondary-lt';
+    return sats === 0 ? 'bg-danger-lt' : sats < 4 ? 'bg-warning-lt' : 'bg-success-lt';
   }
 
   function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

@@ -348,14 +348,19 @@ const db = {
   },
 
   async getClientCounts() {
-    // Returns truck_count and device_count keyed by client_id
+    // Returns truck_count, device_count and avg_satellites keyed by client_id
     const [rows] = await pool.query(`
       SELECT
         t.client_id,
-        COUNT(DISTINCT t.id)  AS truck_count,
-        COUNT(DISTINCT d.id)  AS device_count
+        COUNT(DISTINCT t.id)    AS truck_count,
+        COUNT(DISTINCT d.id)    AS device_count,
+        ROUND(AVG(g.satellites)) AS avg_satellites
       FROM trucks t
       LEFT JOIN devices d ON d.truck_id = t.id
+      LEFT JOIN (
+        SELECT device_id, MAX(id) AS max_gps_id FROM gps_data GROUP BY device_id
+      ) latest ON latest.device_id = d.id
+      LEFT JOIN gps_data g ON g.id = latest.max_gps_id
       GROUP BY t.client_id
     `);
     return rows;

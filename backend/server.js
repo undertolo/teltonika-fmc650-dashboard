@@ -192,8 +192,9 @@ app.get('/api/clients', requireAuth, requireRole('admin', 'superuser'), async (r
     counts.forEach(r => { countMap[r.client_id] = r; });
     const merged = clients.map(c => ({
       ...c,
-      truck_count:  (countMap[c.id]?.truck_count  || 0),
-      device_count: (countMap[c.id]?.device_count || 0)
+      truck_count:    (countMap[c.id]?.truck_count    || 0),
+      device_count:   (countMap[c.id]?.device_count   || 0),
+      avg_satellites: (countMap[c.id]?.avg_satellites ?? null)
     }));
     res.json({ success: true, clients: merged });
   } catch (error) {
