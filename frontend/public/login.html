@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,10 +16,7 @@
 
     <!-- Logo -->
     <div class="text-center mb-4">
-      <a href="." class="navbar-brand navbar-brand-autodark">
-        <img src="img/logo.svg"       class="hide-theme-dark"  alt="FAHR Electronic Systems" height="60" onerror="this.style.display='none'">
-        <img src="img/logo-white.svg" class="hide-theme-light" alt="FAHR Electronic Systems" height="60" onerror="this.style.display='none'">
-      </a>
+      <img src="img/logo-white.svg" alt="FAHR Electronic Systems" height="220" onerror="this.style.display='none'">
     </div>
 
     <!-- Card -->
@@ -61,12 +58,8 @@
 <script>
   document.getElementById('footer-year').textContent = new Date().getFullYear();
 
-  // Apply saved dark mode
+  // Redirect if already logged in
   (function () {
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.documentElement.setAttribute('data-bs-theme', 'dark');
-    }
-    // Redirect if already logged in
     const token = localStorage.getItem('token');
     const base  = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
     if (token) window.location.replace(base + '/customers.html');
