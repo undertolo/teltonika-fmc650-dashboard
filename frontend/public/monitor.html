@@ -441,7 +441,7 @@
           <small class="text-muted" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>
         </td>
         <td>${ignBadge}${speedHtml}</td>
-        <td>${onlineBadge}${batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : ''}</td>
+        <td>${onlineBadge}<small class="text-muted d-block mt-1" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>${batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : ''}</td>
         <td onclick="event.stopPropagation()">
           <button class="star-btn${isFav ? ' starred' : ''}" onclick="toggleFav('${escHtml(d.imei)}')" title="${isFav ? 'Quitar favorito' : 'Agregar favorito'}">
             <i class="ti ti-star${isFav ? '-filled' : ''}"></i>
@@ -561,11 +561,8 @@
         : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
       const batHtml = batteryHtml(d.battery_mv);
       row.cells[3].innerHTML = onlineBadge
+        + `<small class="text-muted d-block mt-1" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>`
         + (batHtml ? `<small class="d-block mt-1">${batHtml}</small>` : '');
-
-      // Update data-ts so ticker picks it up
-      const tsEl = row.querySelector('[data-ts]');
-      if (tsEl) tsEl.dataset.ts = d.last_seen || '';
     });
   }
 
