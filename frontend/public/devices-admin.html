@@ -19,9 +19,6 @@
     .signal-bar:nth-child(4) { height: 82%; }
     .signal-bar:nth-child(5) { height: 100%; }
     .table td { vertical-align: middle; }
-    .badge-online  { background: rgba(47,179,68,.12);  color: #2fb344; }
-    .badge-offline { background: rgba(214,57,57,.12);  color: #d63939; }
-    .badge-sleep   { background: rgba(245,159,0,.12);  color: #f59f00; }
     #refresh-indicator { font-size: .75rem; transition: opacity .3s; }
     #refresh-indicator.refreshing { opacity: .5; }
   </style>
@@ -423,8 +420,8 @@
   function deviceRow(d) {
     const online = isOnline(d.last_seen);
     const statusBadge = online
-      ? `<span class="badge badge-online"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`
-      : `<span class="badge badge-offline"><span class="status-dot bg-danger me-1"></span>Sin conexión</span>`;
+      ? `<span class="badge bg-success-lt text-success"><span class="status-dot status-dot-animated bg-success me-1"></span>En línea</span>`
+      : `<span class="badge bg-danger-lt text-danger"><span class="status-dot bg-danger me-1"></span>Sin conexión</span>`;
 
     const truck = d.truck_name
       ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
