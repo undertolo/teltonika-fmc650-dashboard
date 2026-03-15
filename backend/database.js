@@ -289,8 +289,9 @@ const db = {
   async getAllTrucks() {
     const [rows] = await pool.query(`
       SELECT t.*,
-             COUNT(d.id) AS device_count,
-             c.name      AS client_name
+             COUNT(d.id)                        AS device_count,
+             GROUP_CONCAT(d.imei SEPARATOR ', ') AS device_imeis,
+             c.name                              AS client_name
       FROM trucks t
       LEFT JOIN devices d ON d.truck_id = t.id
       LEFT JOIN fahr_production.client c ON c.id = t.client_id
