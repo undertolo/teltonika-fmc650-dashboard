@@ -200,13 +200,14 @@
                     <tr>
                       <th>Vehículo</th>
                       <th>Dispositivo</th>
-                      <th>Estatus</th>
+                      <th>Motor</th>
+                      <th>Señal</th>
                       <th style="width:20px"></th>
                     </tr>
                   </thead>
                   <tbody id="device-tbody">
                     <tr>
-                      <td colspan="4" class="text-center text-muted py-4">
+                      <td colspan="5" class="text-center text-muted py-4">
                         <div class="spinner-border spinner-border-sm me-2"></div>Cargando...
                       </td>
                     </tr>
@@ -283,6 +284,15 @@
 
   function authHdr() { return { Authorization: `Bearer ${token}` }; }
   function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function signalHtml(level) {
+    if (level === null || level === undefined) return '<span class="text-muted">— GSM</span>';
+    const bars  = ['▁','▂','▃','▄','▅'];
+    const lit   = Math.round((level / 5) * bars.length);
+    const cls   = level <= 1 ? 'text-danger' : level <= 3 ? 'text-warning' : 'text-success';
+    const label = bars.map((b, i) => `<span class="${i < lit ? cls : 'text-muted'}">${b}</span>`).join('');
+    return `${label} <span class="${cls}">${level}/5</span>`;
+  }
 
   // ── State ─────────────────────────────────────────────────
   let map, routePolyline;
@@ -379,7 +389,7 @@
     const tbody = document.getElementById('device-tbody');
 
     if (!devices.length) {
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">
         <i class="ti ti-device-off" style="font-size:1.5rem"></i><br>Sin dispositivos asignados</td></tr>`;
       return;
     }
@@ -393,23 +403,27 @@
     });
 
     tbody.innerHTML = sorted.map(d => {
-      const online   = isOnline(d.last_seen);
-      const ignOn    = d.ignition == 1;
-      const active   = d.imei === selectedImei ? ' active' : '';
-      const isFav    = favorites.has(d.imei);
-      const statusDot = online
-        ? `<span class="status-dot status-dot-animated bg-success me-2" title="En línea"></span>`
-        : `<span class="status-dot bg-secondary me-2" title="Desconectado"></span>`;
-      const truckLbl = d.truck_name
-        ? `<div class="d-flex align-items-center">${statusDot}<div><div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}</div></div>`
-        : `<div class="d-flex align-items-center">${statusDot}<span class="text-muted small">Sin unidad</span></div>`;
+      const online = isOnline(d.last_seen);
+      const ignOn  = d.ignition == 1;
+      const active = d.imei === selectedImei ? ' active' : '';
+      const isFav  = favorites.has(d.imei);
 
-      const wifiIcon = online
-        ? `<i class="ti ti-wifi text-success" title="En línea"></i>`
-        : `<i class="ti ti-wifi-off text-secondary" title="Desconectado"></i>`;
-      const ignIcon = ignOn
-        ? `<span class="badge bg-green-lt ms-1"><i class="ti ti-power me-1"></i>Encendido</span>`
-        : `<span class="badge bg-danger-lt ms-1"><i class="ti ti-power me-1"></i>Apagado</span>`;
+      const truckLbl = d.truck_name
+        ? `<div class="fw-medium">${escHtml(d.truck_name)}</div>${d.truck_plate ? `<small class="text-muted">${escHtml(d.truck_plate)}</small>` : ''}`
+        : `<span class="text-muted small">Sin unidad</span>`;
+
+      // Motor column: ignition + speed
+      const ignBadge = ignOn
+        ? `<span class="badge bg-green-lt"><i class="ti ti-power me-1"></i>Encendido</span>`
+        : `<span class="badge bg-danger-lt"><i class="ti ti-power me-1"></i>Apagado</span>`;
+      const speedHtml = d.last_speed !== null && d.last_speed !== undefined
+        ? `<small class="text-muted d-block mt-1"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</small>` : '';
+
+      // Señal column: online/offline + signal level
+      const onlineBadge = online
+        ? `<span class="badge bg-success-lt"><i class="ti ti-wifi me-1"></i>En línea</span>`
+        : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
+      const sigHtml = signalHtml(d.signal_level);
 
       return `<tr class="device-row${active}" data-imei="${escHtml(d.imei)}" onclick="selectDevice('${escHtml(d.imei)}')">
         <td>${truckLbl}</td>
@@ -417,13 +431,8 @@
           <div class="font-monospace" style="font-size:.78rem">${escHtml(d.imei)}</div>
           <small class="text-muted" data-ts="${d.last_seen || ''}">${formatDate(d.last_seen)}</small>
         </td>
-        <td>
-          <div class="d-flex align-items-center gap-1 flex-wrap">
-            ${wifiIcon}${ignIcon}
-          </div>
-          ${d.last_speed !== null && d.last_speed !== undefined
-            ? `<small class="text-muted"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</small>` : ''}
-        </td>
+        <td>${ignBadge}${speedHtml}</td>
+        <td>${onlineBadge}<small class="text-muted d-block mt-1">${sigHtml}</small></td>
         <td onclick="event.stopPropagation()">
           <button class="star-btn${isFav ? ' starred' : ''}" onclick="toggleFav('${escHtml(d.imei)}')" title="${isFav ? 'Quitar favorito' : 'Agregar favorito'}">
             <i class="ti ti-star${isFav ? '-filled' : ''}"></i>
@@ -529,25 +538,19 @@
       const online = isOnline(d.last_seen);
       const ignOn  = d.ignition == 1;
 
-      // Update status dot in vehicle cell (index 0)
-      const dotEl = row.cells[0].querySelector('.status-dot');
-      if (dotEl) {
-        dotEl.className = online
-          ? 'status-dot status-dot-animated bg-success me-2'
-          : 'status-dot bg-secondary me-2';
-        dotEl.title = online ? 'En línea' : 'Desconectado';
-      }
-
-      // Update status cell (index 2)
-      const wifiIcon = online
-        ? `<i class="ti ti-wifi text-success" title="En línea"></i>`
-        : `<i class="ti ti-wifi-off text-secondary" title="Desconectado"></i>`;
-      const ignIcon = ignOn
-        ? `<span class="badge bg-green-lt ms-1"><i class="ti ti-power me-1"></i>Encendido</span>`
-        : `<span class="badge bg-danger-lt ms-1"><i class="ti ti-power me-1"></i>Apagado</span>`;
+      // Motor cell (index 2)
+      const ignBadge = ignOn
+        ? `<span class="badge bg-green-lt"><i class="ti ti-power me-1"></i>Encendido</span>`
+        : `<span class="badge bg-danger-lt"><i class="ti ti-power me-1"></i>Apagado</span>`;
       const speedHtml = d.last_speed !== null && d.last_speed !== undefined
-        ? `<small class="text-muted"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</small>` : '';
-      row.cells[2].innerHTML = `<div class="d-flex align-items-center gap-1 flex-wrap">${wifiIcon}${ignIcon}</div>${speedHtml}`;
+        ? `<small class="text-muted d-block mt-1"><i class="ti ti-speedometer me-1"></i>${d.last_speed} km/h</small>` : '';
+      row.cells[2].innerHTML = ignBadge + speedHtml;
+
+      // Señal cell (index 3)
+      const onlineBadge = online
+        ? `<span class="badge bg-success-lt"><i class="ti ti-wifi me-1"></i>En línea</span>`
+        : `<span class="badge bg-secondary-lt"><i class="ti ti-wifi-off me-1"></i>Sin señal</span>`;
+      row.cells[3].innerHTML = onlineBadge + `<small class="text-muted d-block mt-1">${signalHtml(d.signal_level)}</small>`;
 
       // Update data-ts so ticker picks it up
       const tsEl = row.querySelector('[data-ts]');
@@ -600,7 +603,7 @@
       setStatus(false);
       if (initial) {
         document.getElementById('device-tbody').innerHTML =
-          `<tr><td colspan="4" class="text-center text-danger py-4"><i class="ti ti-alert-triangle me-2"></i>Error de conexión</td></tr>`;
+          `<tr><td colspan="5" class="text-center text-danger py-4"><i class="ti ti-alert-triangle me-2"></i>Error de conexión</td></tr>`;
       }
     }
   }
