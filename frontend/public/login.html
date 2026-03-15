@@ -3,81 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — Teltonika FMC650</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/login.css">
+  <title>Iniciar sesión — FAHR Electronic Systems</title>
+  <link rel="stylesheet" href="css/tabler.min.css">
+  <style>
+    .page-center { min-height: 100vh; display: flex; align-items: center; }
+  </style>
 </head>
-<body>
-  <div class="login-wrapper">
-    <div class="login-card">
-      <div class="login-logo">📡</div>
-      <h1 class="login-title">Teltonika FMC650</h1>
-      <p class="login-subtitle">Fleet Management Dashboard</p>
+<body class="antialiased">
 
-      <form id="login-form" onsubmit="handleLogin(event)">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username" autocomplete="username" required autofocus>
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" autocomplete="current-password" required>
-        </div>
-        <div id="login-error" class="login-error" style="display:none"></div>
-        <button type="submit" class="login-btn" id="login-btn">Sign In</button>
-      </form>
+<div class="page page-center">
+  <div class="container container-tight py-4">
+
+    <!-- Logo -->
+    <div class="text-center mb-4">
+      <a href="." class="navbar-brand navbar-brand-autodark">
+        <img src="img/logo.svg"       class="hide-theme-dark"  alt="FAHR Electronic Systems" height="60" onerror="this.style.display='none'">
+        <img src="img/logo-white.svg" class="hide-theme-light" alt="FAHR Electronic Systems" height="60" onerror="this.style.display='none'">
+      </a>
     </div>
+
+    <!-- Card -->
+    <div class="card card-md">
+      <div class="card-body">
+        <h2 class="h2 text-center mb-4">Iniciar sesión</h2>
+
+        <form id="login-form" onsubmit="handleLogin(event)" autocomplete="off">
+          <div class="mb-3">
+            <label class="form-label" for="username">Usuario</label>
+            <input type="text" id="username" name="username" class="form-control"
+                   placeholder="Ingresa tu usuario" autocomplete="username" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="password">Contraseña</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="••••••••" autocomplete="current-password" required>
+          </div>
+
+          <div id="login-error" class="alert alert-danger" style="display:none"></div>
+
+          <div class="form-footer">
+            <button type="submit" id="login-btn" class="btn btn-primary w-100">
+              <span id="btn-text">Iniciar sesión</span>
+              <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2" style="display:none"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="text-center text-muted mt-3" style="font-size:.8rem">
+      FAHR Electronic Systems &copy; <span id="footer-year"></span>
+    </div>
+
   </div>
+</div>
 
-  <script>
-    // Redirect if already logged in
-    (function () {
-      const token = localStorage.getItem('token');
-      const base = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
-      if (token) window.location.replace(base + '/');
-    })();
+<script>
+  document.getElementById('footer-year').textContent = new Date().getFullYear();
 
-    async function handleLogin(e) {
-      e.preventDefault();
-      const btn = document.getElementById('login-btn');
-      const errorEl = document.getElementById('login-error');
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-
-      btn.disabled = true;
-      btn.textContent = 'Signing in...';
-      errorEl.style.display = 'none';
-
-      try {
-        const base = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
-        const res = await fetch(base + '/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          const base = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
-          const role = data.user.role;
-          if (role === 'admin' || role === 'superuser') {
-            window.location.replace(base + '/customers.html');
-          } else {
-            window.location.replace(base + '/');
-          }
-        } else {
-          throw new Error(data.error || 'Login failed');
-        }
-      } catch (err) {
-        errorEl.textContent = err.message === 'Failed to fetch' ? 'Server unavailable' : 'Invalid username or password';
-        errorEl.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-      }
+  // Apply saved dark mode
+  (function () {
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.setAttribute('data-bs-theme', 'dark');
     }
-  </script>
+    // Redirect if already logged in
+    const token = localStorage.getItem('token');
+    const base  = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+    if (token) window.location.replace(base + '/customers.html');
+  })();
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn     = document.getElementById('login-btn');
+    const spinner = document.getElementById('btn-spinner');
+    const errorEl = document.getElementById('login-error');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    btn.disabled      = true;
+    spinner.style.display = '';
+    errorEl.style.display = 'none';
+
+    try {
+      const base = window.location.pathname.startsWith('/newdashboard') ? '/newdashboard' : '';
+      const res  = await fetch(base + '/api/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user',  JSON.stringify(data.user));
+        const role = data.user.role;
+        if (role === 'admin' || role === 'superuser') {
+          window.location.replace(base + '/customers.html');
+        } else {
+          window.location.replace(base + '/');
+        }
+      } else {
+        throw new Error(data.error || 'Error de autenticación');
+      }
+    } catch (err) {
+      errorEl.textContent   = err.message === 'Failed to fetch'
+        ? 'Servidor no disponible. Intenta de nuevo.'
+        : 'Usuario o contraseña incorrectos.';
+      errorEl.style.display = 'block';
+      btn.disabled          = false;
+      spinner.style.display = 'none';
+    }
+  }
+</script>
 </body>
 </html>
